@@ -6,4 +6,12 @@
     <Nullable>disable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <ProjectReference Include="..\TradingApp.Domain\TradingApp.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
