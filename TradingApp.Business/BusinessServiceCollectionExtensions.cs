@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using TradingApp.Business.Interfaces.Repositories;
 using TradingApp.Business.Interfaces.Services;
+using TradingApp.Business.Repositories;
 using TradingApp.Business.Services.Regular;
-using TradingApp.Business.Services.Repository;
 
 namespace TradingApp.Business
 {
