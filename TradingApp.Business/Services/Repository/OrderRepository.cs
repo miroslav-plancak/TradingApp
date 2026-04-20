@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using TradingApp.Business.Extensions;
 using TradingApp.Business.Interfaces.Logger;
@@ -16,7 +20,7 @@ namespace TradingApp.Business.Services.Repository
             _tradingDbContext = tradingDbContext;
         }
 
-        public async Task CreateOrderAsync(Order order)
+        public async Task<Order> CreateOrderAsync(Order order)
         {
             LogEntryWithScope();
 
@@ -26,20 +30,34 @@ namespace TradingApp.Business.Services.Repository
             order.UpdatedAt = DateTimeOffset.UtcNow;
 
             _tradingDbContext.Orders.Add(order);
+            await _tradingDbContext.SaveChangesAsync();
 
             LogExitWithScope();
 
-            await _tradingDbContext.SaveChangesAsync();
+            return order;
         }
 
-        public Task<Order> GetOrderByIdAsync(Order order)
+        public async Task<Order> GetOrderByIdAsync(Guid orderId)
         {
-            throw new System.NotImplementedException();
+            LogEntryWithScope();
+
+            var result = await _tradingDbContext.Orders
+                .AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == orderId);
+
+            LogExitWithScope();
+
+            return result;
         }
 
-        public Task<Order> GetOrdersAsync(Order order)
+        public async Task<IEnumerable<Order>> GetOrdersAsync()
         {
-            throw new System.NotImplementedException();
+            LogEntryWithScope();
+
+            var result =  await _tradingDbContext.Orders.ToListAsync();
+
+            LogExitWithScope();
+            return result;
         }
     }
 }

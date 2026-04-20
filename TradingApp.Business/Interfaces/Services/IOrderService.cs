@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using TradingApp.Business.DTOs;
 
 namespace TradingApp.Business.Interfaces.Services
@@ -6,7 +8,7 @@ namespace TradingApp.Business.Interfaces.Services
     public interface IOrderService
     {
         Task<CreateOrderResponseDTO> CreateOrderAsync(CreateOrderRequestDTO createOrder);
-        Task GetOrdersAsync();
-        Task GetOrderByIdAsync();
+        Task <IEnumerable<OrderResponseDTO>> GetOrdersAsync();
+        Task <OrderResponseDTO> GetOrderByIdAsync(Guid orderId);
     }
 }
