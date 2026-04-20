@@ -3,7 +3,7 @@ using TradingApp.Domain.Models.Enums;
 
 namespace TradingApp.Business.DTOs
 {
-    public class CreateOrderResponseDTO
+    public class OrderResponseDTO
     {
         public Guid Id { get; set; }
         public Guid ClientOrderId { get; set; }

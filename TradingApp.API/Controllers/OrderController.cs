@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 using TradingApp.Business.DTOs;
 using TradingApp.Business.Interfaces.Logger;
@@ -18,21 +19,21 @@ namespace TradingApp.API.Controllers
         public async Task<ActionResult> CreateOrderAsync(CreateOrderRequestDTO createOrder)
         {
             var result = await _orderService.CreateOrderAsync(createOrder);
-            return Ok(new { Message = "Order created mock!"});
+            return Ok(result);
         }
 
         [HttpGet]
         public async Task<ActionResult> GetOrdersAsync()
         {
-            await Task.CompletedTask;
-            return Ok();
+            var result = await _orderService.GetOrdersAsync();
+            return Ok(result);
         }
 
-        [HttpGet("order/{oderId}")]
-        public async Task<ActionResult> GetOrderByIdAsync([FromBody] string orderId)
+        [HttpGet("{orderId}")]
+        public async Task<ActionResult> GetOrderByIdAsync([FromRoute] Guid orderId)
         {
-            await Task.CompletedTask;
-            return Ok();
+            var result = await _orderService.GetOrderByIdAsync(orderId);
+            return Ok(result);
         }
     }
 }
