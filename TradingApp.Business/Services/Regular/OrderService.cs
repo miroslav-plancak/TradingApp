@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using TradingApp.Business.DTOs;
 using TradingApp.Business.Extensions;
@@ -23,9 +26,12 @@ namespace TradingApp.Business.Services.Regular
         {
             LogEntryWithScope();
 
-            var orderEntity = OrderMapper.ToEntity(orderRequest);
-            var result = await _orderRepository.CreateOrderAsync(orderEntity);
-            var orderDTO = OrderMapper.ToCreatedOrderResponseDTO(result);
+            var orderEntityRequest = OrderMapper.ToEntity(orderRequest);
+            var order = await _orderRepository.CreateOrderAsync(orderEntityRequest);
+            var orderDTO = OrderMapper.ToCreatedOrderResponseDTO(order);
+
+            //triger az OrderExecutionProvider func
+            await NotifyOrderExecutionProviderAsync(order.ClientOrderId);
 
             LogExitWithScope();
             return orderDTO;
@@ -50,7 +56,22 @@ namespace TradingApp.Business.Services.Regular
             var orderDTOs = OrderMapper.ToOrderResponseDTOs(orderEntities);
 
             LogExitWithScope();
+
             return orderDTOs;
+        }
+
+        private async Task NotifyOrderExecutionProviderAsync(Guid clientOderId) 
+        {
+            var payload = new { ClientOrderId = clientOderId };
+            var json = JsonSerializer.Serialize(payload);
+
+            using var client = new HttpClient();
+
+            var response = await client.PostAsync(
+                "http://localhost:7174/api/OrderExecutionProvider",
+                new StringContent(json, Encoding.UTF8, "application/json")
+                );
+            response.EnsureSuccessStatusCode();
         }
     }
 }

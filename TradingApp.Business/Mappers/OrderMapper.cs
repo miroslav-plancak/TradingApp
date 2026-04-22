@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using TradingApp.Business.DTOs;
 using TradingApp.Domain.Models.Entities;
@@ -8,18 +7,6 @@ namespace TradingApp.Business.Mappers
 {
     public static class OrderMapper
     {
-        public static CreateOrderRequestDTO ToCreateOrderRequestDTO(Order entity)
-        {
-            if (entity == null) return null;
-
-            return new CreateOrderRequestDTO
-            {
-                Status = entity.Status,
-                Quantity = entity.Quantity,
-                Price = entity.Price,
-            };
-        }
-
         public static CreateOrderResponseDTO ToCreatedOrderResponseDTO(Order entity) 
         {
             if (entity == null) return null;
@@ -47,6 +34,7 @@ namespace TradingApp.Business.Mappers
                 Price = dto.Price,
             };
         }
+
         public static OrderResponseDTO ToOrderResponseDTO(Order entity)
         {
             if (entity == null) return null;
@@ -55,7 +43,7 @@ namespace TradingApp.Business.Mappers
             {
                 Id = entity.Id,
                 ClientOrderId = entity.ClientOrderId,
-                Status = entity.Status,
+                Status = entity.Status.ToString(),
                 Quantity = entity.Quantity,
                 Price = entity.Price,
                 CreatedAt = entity.CreatedAt,

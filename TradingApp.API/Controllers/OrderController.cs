@@ -10,6 +10,7 @@ namespace TradingApp.API.Controllers
     public class OrderController : TradingAppBaseController<OrderController>
     {
         private readonly IOrderService _orderService;
+
         public OrderController(ITradingAppLogger logger, IOrderService orderService): base(logger)
         {
             _orderService = orderService;
@@ -22,17 +23,17 @@ namespace TradingApp.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet]
-        public async Task<ActionResult> GetOrdersAsync()
-        {
-            var result = await _orderService.GetOrdersAsync();
-            return Ok(result);
-        }
-
         [HttpGet("{orderId}")]
         public async Task<ActionResult> GetOrderByIdAsync([FromRoute] Guid orderId)
         {
             var result = await _orderService.GetOrderByIdAsync(orderId);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        public async Task<ActionResult> GetOrdersAsync()
+        {
+            var result = await _orderService.GetOrdersAsync();
             return Ok(result);
         }
     }

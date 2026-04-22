@@ -1,5 +1,4 @@
-﻿using System;
-using TradingApp.Domain.Models.Enums;
+﻿using TradingApp.Domain.Models.Enums;
 
 namespace TradingApp.Business.DTOs
 {

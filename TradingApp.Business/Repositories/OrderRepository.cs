@@ -55,6 +55,7 @@ namespace TradingApp.Business.Repositories
             var result = await _tradingDbContext.Orders.ToListAsync();
 
             LogExitWithScope();
+
             return result;
         }
     }
