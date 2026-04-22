@@ -71,6 +71,7 @@ namespace TradingApp.Business.Services.Regular
                 "http://localhost:7174/api/OrderExecutionProvider",
                 new StringContent(json, Encoding.UTF8, "application/json")
                 );
+
             response.EnsureSuccessStatusCode();
         }
     }

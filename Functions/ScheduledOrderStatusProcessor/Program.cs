@@ -7,13 +7,14 @@ using TradingApp.Domain;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
-// Configure logging/telemetry
 builder.ConfigureFunctionsWebApplication();
+
+//logging
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
 
-// Register DbContext
+//register DbContext
 builder.Services.AddDbContext<TradingDbContext>(options =>
     options.UseSqlServer(Environment.GetEnvironmentVariable("SqlConnectionString"))
 );
