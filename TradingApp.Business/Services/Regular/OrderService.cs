@@ -10,19 +10,26 @@ using TradingApp.Business.Interfaces.Logger;
 using TradingApp.Business.Interfaces.Repositories;
 using TradingApp.Business.Interfaces.Services;
 using TradingApp.Business.Mappers;
+using TradingApp.Domain.Models.Entities;
 
 namespace TradingApp.Business.Services.Regular
 {
     public class OrderService : TradingAppBaseLoggerExtension<OrderService>,IOrderService
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         public  OrderService(ITradingAppLogger logger, IOrderRepository orderRepository) : base(logger)
         {
             _orderRepository = orderRepository;
+
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
         }
 
-        public async Task<CreateOrderResponseDTO> CreateOrderAsync(CreateOrderRequestDTO orderRequest)
+        public async Task<CreatedOrderResponseDTO> CreateOrderAsync(CreateOrderRequestDTO orderRequest)
         {
             LogEntryWithScope();
 
@@ -30,8 +37,12 @@ namespace TradingApp.Business.Services.Regular
             var order = await _orderRepository.CreateOrderAsync(orderEntityRequest);
             var orderDTO = OrderMapper.ToCreatedOrderResponseDTO(order);
 
-            //triger az OrderExecutionProvider func
-            await NotifyOrderExecutionProviderAsync(order.ClientOrderId);
+            var funcOrderResponse = await NotifyOrderExecutionProviderAsync(order.ClientOrderId);
+
+            if (funcOrderResponse != null)
+            {
+                orderDTO.Status = funcOrderResponse.Status.ToString();
+            }
 
             LogExitWithScope();
             return orderDTO;
@@ -60,9 +71,9 @@ namespace TradingApp.Business.Services.Regular
             return orderDTOs;
         }
 
-        private async Task NotifyOrderExecutionProviderAsync(Guid clientOderId) 
+        private async Task<OrderResponse> NotifyOrderExecutionProviderAsync(Guid clientOrderId) 
         {
-            var payload = new { ClientOrderId = clientOderId };
+            var payload = new { ClientOrderId = clientOrderId };
             var json = JsonSerializer.Serialize(payload);
 
             using var client = new HttpClient();
@@ -72,7 +83,10 @@ namespace TradingApp.Business.Services.Regular
                 new StringContent(json, Encoding.UTF8, "application/json")
                 );
 
-            response.EnsureSuccessStatusCode();
+            var responseContent = await response.Content.ReadAsStringAsync() ;
+            var result = JsonSerializer.Deserialize<OrderResponse>(responseContent, _jsonOptions);
+
+            return result;
         }
     }
 }

@@ -44,6 +44,7 @@ public class OrderExecutionProvider
         order.UpdatedAt = DateTimeOffset.UtcNow;
 
         await _tradingDbContext.SaveChangesAsync();
-        return new OkObjectResult(new { payload.ClientOrderId, Status = order.Status.ToString() });
+
+        return new OkObjectResult(new OrderResponse { ClientOrderId =  payload.ClientOrderId, Status = order.Status });
     }
 }

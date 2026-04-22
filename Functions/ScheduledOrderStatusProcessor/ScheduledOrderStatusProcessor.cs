@@ -22,24 +22,24 @@ public class ScheduledOrderStatusProcessor
     {
         _logger.LogInformation("ScheduledOrderStatusProcessor tiggered at: {triggerTime}.", DateTime.UtcNow);
 
-        var ackOders = await _tradingDbContext.Orders
+        var pendingAckOrders = await _tradingDbContext.Orders
             .Where(ao => ao.Status == OrderStatus.ACKNOWLEDGED)
             .ToListAsync();
 
-        if (ackOders.Count == 0)
+        if (pendingAckOrders.Count == 0)
         {
             _logger.LogInformation("No ACK status orders found.");
             return;
         }
 
-        foreach (var ackOrder in ackOders)
+        foreach (var pendingAckOrder in pendingAckOrders)
         {
-            ackOrder.Status = OrderStatus.FILLED;
-            ackOrder.UpdatedAt = DateTime.UtcNow;
+            pendingAckOrder.Status = OrderStatus.FILLED;
+            pendingAckOrder.UpdatedAt = DateTime.UtcNow;
         }
 
         await _tradingDbContext.SaveChangesAsync();
 
-        _logger.LogInformation("Updated {count} orders to FILLED.", ackOders.Count);
+        _logger.LogInformation("Updated {count} orders to FILLED.", pendingAckOrders.Count);
     }
 }

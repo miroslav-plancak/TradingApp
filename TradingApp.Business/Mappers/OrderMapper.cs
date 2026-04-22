@@ -7,15 +7,15 @@ namespace TradingApp.Business.Mappers
 {
     public static class OrderMapper
     {
-        public static CreateOrderResponseDTO ToCreatedOrderResponseDTO(Order entity) 
+        public static CreatedOrderResponseDTO ToCreatedOrderResponseDTO(Order entity) 
         {
             if (entity == null) return null;
 
-            return new CreateOrderResponseDTO
+            return new CreatedOrderResponseDTO
             {
                 Id = entity.Id,
                 ClientOrderId = entity.ClientOrderId,
-                Status = entity.Status,
+                Status = entity.Status.ToString(),
                 Quantity = entity.Quantity,
                 Price = entity.Price,
                 CreatedAt = entity.CreatedAt,
@@ -29,7 +29,6 @@ namespace TradingApp.Business.Mappers
 
             return new Order
             {
-                Status = dto.Status,
                 Quantity = dto.Quantity,
                 Price = dto.Price,
             };
