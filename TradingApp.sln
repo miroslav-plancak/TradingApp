@@ -16,7 +16,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradingApp.API", "TradingAp
 		{91D1DB70-2CA9-443D-9555-F29FAA3A38EE} = {91D1DB70-2CA9-443D-9555-F29FAA3A38EE}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderExecutionProviderFunc", "OrderExecutionProviderFunc\OrderExecutionProviderFunc.csproj", "{85C2B4E4-4DB2-4215-B0F2-D8A934485B5A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderExecutionProvider", "OrderExecutionProviderFunc\OrderExecutionProvider.csproj", "{85C2B4E4-4DB2-4215-B0F2-D8A934485B5A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScheduledOrderStatusProcessor", "Functions\ScheduledOrderStatusProcessor\ScheduledOrderStatusProcessor.csproj", "{B541FD43-4828-435A-98A2-BA7EAFA99F25}"
 EndProject
