@@ -1,16 +1,15 @@
-﻿using System;
+﻿using Azure.Messaging.ServiceBus;
+using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using TradingApp.Business.Constants;
 using TradingApp.Business.DTOs;
 using TradingApp.Business.Extensions;
 using TradingApp.Business.Interfaces.Logger;
 using TradingApp.Business.Interfaces.Repositories;
 using TradingApp.Business.Interfaces.Services;
 using TradingApp.Business.Mappers;
-using TradingApp.Domain.Models.Entities;
 
 namespace TradingApp.Business.Services.Regular
 {
@@ -35,14 +34,15 @@ namespace TradingApp.Business.Services.Regular
 
             var orderEntityRequest = OrderMapper.ToEntity(orderRequest);
             var order = await _orderRepository.CreateOrderAsync(orderEntityRequest);
-            var orderDTO = OrderMapper.ToCreatedOrderResponseDTO(order);
 
-            var funcOrderResponse = await NotifyOrderExecutionProviderAsync(order.ClientOrderId);
-
-            if (funcOrderResponse != null)
+            if(order == null)
             {
-                orderDTO.Status = funcOrderResponse.Status.ToString();
+                throw new Exception("Order creation failed.");
             }
+
+            var orderDTO = OrderMapper.ToCreatedOrderResponseDTO(order);
+            
+            await NotifyServiceBusCreateOrderQueue(order.ClientOrderId);
 
             LogExitWithScope();
             return orderDTO;
@@ -71,22 +71,15 @@ namespace TradingApp.Business.Services.Regular
             return orderDTOs;
         }
 
-        private async Task<OrderResponse> NotifyOrderExecutionProviderAsync(Guid clientOrderId) 
+        private async Task NotifyServiceBusCreateOrderQueue(Guid clientOrderId) 
         {
+            await using var client = new ServiceBusClient(AzureFunctionConstants.ConnectionString);
+            ServiceBusSender sender = client.CreateSender("CREATE_ORDER_QUEUE");
+
             var payload = new { ClientOrderId = clientOrderId };
             var json = JsonSerializer.Serialize(payload);
 
-            using var client = new HttpClient();
-
-            var response = await client.PostAsync(
-                "http://localhost:7174/api/OrderExecutionProvider",
-                new StringContent(json, Encoding.UTF8, "application/json")
-                );
-
-            var responseContent = await response.Content.ReadAsStringAsync() ;
-            var result = JsonSerializer.Deserialize<OrderResponse>(responseContent, _jsonOptions);
-
-            return result;
+            await sender.SendMessageAsync(new ServiceBusMessage(json));
         }
     }
 }
