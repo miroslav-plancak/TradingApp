@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TradingApp.Domain\TradingApp.Domain.csproj" />
+    <ProjectReference Include="..\..\TradingApp.Domain\TradingApp.Domain.csproj" />
   </ItemGroup>
 	
 </Project>

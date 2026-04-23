@@ -28,7 +28,7 @@ public class ScheduledOrderStatusProcessor
 
         if (pendingAckOrders.Count == 0)
         {
-            _logger.LogInformation("No ACK status orders found.");
+            _logger.LogInformation("No ACKNOWLEDGED status orders found.");
             return;
         }
 
@@ -40,6 +40,6 @@ public class ScheduledOrderStatusProcessor
 
         await _tradingDbContext.SaveChangesAsync();
 
-        _logger.LogInformation("Updated {count} orders to FILLED.", pendingAckOrders.Count);
+        _logger.LogInformation("Updated {count} ACKNOWLEDGED orders to FILLED.", pendingAckOrders.Count);
     }
 }
