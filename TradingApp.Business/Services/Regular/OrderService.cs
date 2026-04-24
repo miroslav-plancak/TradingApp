@@ -46,7 +46,7 @@ namespace TradingApp.Business.Services.Regular
                 Id = Guid.NewGuid(),
                 Type = "OrderCreated",
                 Payload =  order.ClientOrderId.ToString(),
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTimeOffset.UtcNow
             });
 
             await _tradingDbContext.SaveChangesAsync();
