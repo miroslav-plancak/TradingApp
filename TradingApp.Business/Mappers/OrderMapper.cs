@@ -19,7 +19,8 @@ namespace TradingApp.Business.Mappers
                 Quantity = entity.Quantity,
                 Price = entity.Price,
                 CreatedAt = entity.CreatedAt,
-                UpdatedAt = entity.UpdatedAt
+                UpdatedAt = entity.UpdatedAt,
+                IsProcessed = entity.IsProcessed
             };
         }
 
@@ -46,7 +47,8 @@ namespace TradingApp.Business.Mappers
                 Quantity = entity.Quantity,
                 Price = entity.Price,
                 CreatedAt = entity.CreatedAt,
-                UpdatedAt = entity.UpdatedAt
+                UpdatedAt = entity.UpdatedAt,
+                IsProcessed = entity.IsProcessed
             };
         }
 

@@ -11,5 +11,6 @@ namespace TradingApp.Business.DTOs
         public decimal Price { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
+        public bool IsProcessed { get; set; }
     }
 }
