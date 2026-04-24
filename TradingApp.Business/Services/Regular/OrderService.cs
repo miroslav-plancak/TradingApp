@@ -10,16 +10,20 @@ using TradingApp.Business.Interfaces.Logger;
 using TradingApp.Business.Interfaces.Repositories;
 using TradingApp.Business.Interfaces.Services;
 using TradingApp.Business.Mappers;
+using TradingApp.Domain;
+using TradingApp.Domain.Models.Entities;
 
 namespace TradingApp.Business.Services.Regular
 {
     public class OrderService : TradingAppBaseLoggerExtension<OrderService>,IOrderService
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly TradingDbContext _tradingDbContext;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public  OrderService(ITradingAppLogger logger, IOrderRepository orderRepository) : base(logger)
+        public  OrderService(ITradingAppLogger logger, TradingDbContext tradingDbContext, IOrderRepository orderRepository) : base(logger)
         {
+            _tradingDbContext = tradingDbContext;
             _orderRepository = orderRepository;
 
             _jsonOptions = new JsonSerializerOptions
@@ -32,20 +36,25 @@ namespace TradingApp.Business.Services.Regular
         {
             LogEntryWithScope();
 
+            using var transaction = await _tradingDbContext.Database.BeginTransactionAsync();
+
             var orderEntityRequest = OrderMapper.ToEntity(orderRequest);
             var order = await _orderRepository.CreateOrderAsync(orderEntityRequest);
 
-            if(order == null)
+            _tradingDbContext.OutboxMessages.Add(new OutboxMessage
             {
-                throw new Exception("Order creation failed.");
-            }
+                Id = Guid.NewGuid(),
+                Type = "OrderCreated",
+                Payload =  order.ClientOrderId.ToString(),
+                CreatedAt = DateTime.UtcNow
+            });
 
-            var orderDTO = OrderMapper.ToCreatedOrderResponseDTO(order);
-            
-            await NotifyServiceBusCreateOrderQueue(order.ClientOrderId);
+            await _tradingDbContext.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             LogExitWithScope();
-            return orderDTO;
+
+            return OrderMapper.ToCreatedOrderResponseDTO(order);
         }
 
         public async Task<OrderResponseDTO> GetOrderByIdAsync(Guid orderId)
@@ -69,17 +78,6 @@ namespace TradingApp.Business.Services.Regular
             LogExitWithScope();
 
             return orderDTOs;
-        }
-
-        private async Task NotifyServiceBusCreateOrderQueue(Guid clientOrderId) 
-        {
-            await using var client = new ServiceBusClient(AzureFunctionConstants.ConnectionString);
-            ServiceBusSender sender = client.CreateSender("CREATE_ORDER_QUEUE");
-
-            var payload = new { ClientOrderId = clientOrderId };
-            var json = JsonSerializer.Serialize(payload);
-
-            await sender.SendMessageAsync(new ServiceBusMessage(json));
         }
     }
 }

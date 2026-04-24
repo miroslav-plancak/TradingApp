@@ -38,9 +38,16 @@ public class OrderExecutionProvider
 
         if (order == null) return;
 
+        if (order.IsProcessed)
+        {
+            _logger.LogInformation("Order already processed: {Id}", payload.ClientOrderId);
+            return;
+        }
+
         var random = new Random();
         order.Status = random.Next(2) == 0 ? OrderStatus.ACKNOWLEDGED : OrderStatus.REJECTED;
         order.UpdatedAt = DateTimeOffset.UtcNow;
+        order.IsProcessed = true;
 
         await _tradingDbContext.SaveChangesAsync();
     }
