@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TradingApp.Domain;
-using TradingApp.Domain.Models.Entities;
+using TradingApp.Domain.Models.Entities.Order;
 using TradingApp.Domain.Models.Enums;
 
 namespace OrderExecutionProvider

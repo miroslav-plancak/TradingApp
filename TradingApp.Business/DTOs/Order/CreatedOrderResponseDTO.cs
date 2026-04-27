@@ -1,9 +1,8 @@
 ﻿using System;
-using TradingApp.Domain.Models.Enums;
 
-namespace TradingApp.Business.DTOs
+namespace TradingApp.Business.DTOs.Order
 {
-    public class OrderResponseDTO
+    public class CreatedOrderResponseDTO
     {
         public Guid Id { get; set; }
         public Guid ClientOrderId { get; set; }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using TradingApp.Business.DTOs;
+using TradingApp.Business.DTOs.Order;
 
 namespace TradingApp.Business.Interfaces.Services
 {

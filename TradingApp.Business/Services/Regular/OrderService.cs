@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using TradingApp.Business.Constants;
-using TradingApp.Business.DTOs;
+using TradingApp.Business.DTOs.Order;
 using TradingApp.Business.Extensions;
 using TradingApp.Business.Interfaces.Logger;
 using TradingApp.Business.Interfaces.Repositories;
@@ -12,6 +12,7 @@ using TradingApp.Business.Interfaces.Services;
 using TradingApp.Business.Mappers;
 using TradingApp.Domain;
 using TradingApp.Domain.Models.Entities;
+using TradingApp.Domain.Models.Entities.OutboxMessage;
 
 namespace TradingApp.Business.Services.Regular
 {

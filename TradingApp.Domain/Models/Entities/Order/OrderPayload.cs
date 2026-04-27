@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TradingApp.Domain.Models.Entities
+namespace TradingApp.Domain.Models.Entities.Order
 {
     public class OrderPayload
     {

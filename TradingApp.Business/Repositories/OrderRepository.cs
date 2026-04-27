@@ -6,7 +6,7 @@ using TradingApp.Business.Extensions;
 using TradingApp.Business.Interfaces.Logger;
 using TradingApp.Business.Interfaces.Repositories;
 using TradingApp.Domain;
-using TradingApp.Domain.Models.Entities;
+using TradingApp.Domain.Models.Entities.Order;
 
 namespace TradingApp.Business.Repositories
 {

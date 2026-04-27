@@ -1,6 +1,6 @@
 ﻿using TradingApp.Domain.Models.Enums;
 
-namespace TradingApp.Business.DTOs
+namespace TradingApp.Business.DTOs.Order
 {
     public class CreateOrderRequestDTO
     {

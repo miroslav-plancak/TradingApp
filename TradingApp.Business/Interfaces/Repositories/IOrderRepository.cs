@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using TradingApp.Domain.Models.Entities;
+using TradingApp.Domain.Models.Entities.Order;
 
 namespace TradingApp.Business.Interfaces.Repositories
 {

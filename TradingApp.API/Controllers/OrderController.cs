@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
-using TradingApp.Business.DTOs;
+using TradingApp.Business.DTOs.Order;
 using TradingApp.Business.Interfaces.Logger;
 using TradingApp.Business.Interfaces.Services;
 

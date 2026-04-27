@@ -8,10 +8,12 @@ namespace TradingApp.Business
 {
     public static class BusinessServiceCollectionExtensions
     {
-        public static IServiceCollection RegisterBusiness(this IServiceCollection services) 
+        public static IServiceCollection RegisterBusiness(this IServiceCollection services)
         {
             services.AddScoped<IOrderService, OrderService>()
                     .AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IDeadLetterService, DeadLetterService>();
+            services.AddScoped<IDeadLetterRepository, DeadLetterRepository>();
             return services;
         }
     }

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using TradingApp.Business.DTOs;
-using TradingApp.Domain.Models.Entities;
+using TradingApp.Business.DTOs.Order;
+using TradingApp.Domain.Models.Entities.Order;
 
 namespace TradingApp.Business.Mappers
 {

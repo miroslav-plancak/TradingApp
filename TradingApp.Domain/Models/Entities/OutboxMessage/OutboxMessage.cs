@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TradingApp.Domain.Models.Entities
+namespace TradingApp.Domain.Models.Entities.OutboxMessage
 {
     public class OutboxMessage
     {

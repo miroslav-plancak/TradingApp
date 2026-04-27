@@ -1,7 +1,7 @@
 ﻿using System;
 using TradingApp.Domain.Models.Enums;
 
-namespace TradingApp.Domain.Models.Entities
+namespace TradingApp.Domain.Models.Entities.Order
 {
     public class OrderResponse
     {
