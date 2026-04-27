@@ -39,8 +39,22 @@ public class ScheduledOutboxMessageProcessor
             {
                 if(Guid.TryParse(message.Payload, out var clientOrderId))
                 {
-                    await NotifyServiceBusCreateOrderQueue(clientOrderId);
-                    message.ProcessedAt = DateTimeOffset.UtcNow;
+                    var isProcessedAlready = await _tradingDbContext.Orders
+                        .Where(x => x.ClientOrderId == clientOrderId)
+                        .Select(x => x.IsProcessed)
+                        .FirstOrDefaultAsync();
+
+                    if (isProcessedAlready)
+                    {
+                        message.ProcessedAt = DateTimeOffset.UtcNow;
+                        continue;
+                    }
+                    else 
+                    {
+                        await NotifyServiceBusCreateOrderQueue(clientOrderId);
+                        message.ProcessedAt = DateTimeOffset.UtcNow;
+                    }
+
                 }
                 else
                 {
