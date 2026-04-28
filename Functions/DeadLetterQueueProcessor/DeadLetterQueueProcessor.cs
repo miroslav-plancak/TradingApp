@@ -60,7 +60,7 @@ namespace DeadLetterQueueProcessor
                     await _deadLetterService.CreateDeadLetterLogAsync(
                         messageBody,
                         payload.ClientOrderId,
-                        "Order not found");
+                        "Order not found in the database.");
 
                     return;
                 }
