@@ -1,9 +1,9 @@
 using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using TradingApp.Business.Constants;
 using TradingApp.Domain;
 
 namespace ScheduledOutboxMessageProcessor
@@ -14,11 +14,18 @@ namespace ScheduledOutboxMessageProcessor
         private readonly TradingDbContext _tradingDbContext;
         private readonly ServiceBusClient _client;
         private readonly ServiceBusSender _sender;
-        public ScheduledOutboxMessageProcessor(ILoggerFactory loggerFactory, TradingDbContext tradingDbContext)
+
+        public ScheduledOutboxMessageProcessor
+            (
+            ILoggerFactory loggerFactory, 
+            TradingDbContext tradingDbContext,
+            IConfiguration configuration
+            )
         {
             _logger = loggerFactory.CreateLogger<ScheduledOutboxMessageProcessor>();
             _tradingDbContext = tradingDbContext;
-            _client = new ServiceBusClient(AzureFunctionConstants.ConnectionString);
+            var connectionString = configuration["ServiceBusConnectionString"];
+            _client = new ServiceBusClient(connectionString);
             _sender = _client.CreateSender("CREATE_ORDER_QUEUE");
         }
 
