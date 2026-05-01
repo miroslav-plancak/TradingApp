@@ -80,5 +80,27 @@ namespace TradingApp.Business.Services.Regular
 
             return orderDTOs;
         }
+
+        public async Task<bool> DeleteOrderAsync(Guid orderId)
+        {
+            LogEntryWithScope();
+
+            var deleted = await _orderRepository.DeleteOrderAsync(orderId);
+
+            LogExitWithScope();
+
+            return deleted;
+        }
+
+        public async Task<int> DeleteAllOrdersAsync()
+        {
+            LogEntryWithScope();
+
+            var deletedCount = await _orderRepository.DeleteAllOrdersAsync();
+
+            LogExitWithScope();
+
+            return deletedCount;
+        }
     }
 }

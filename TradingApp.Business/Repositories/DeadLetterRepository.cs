@@ -152,5 +152,44 @@ namespace TradingApp.Business.Repositories
 
             LogExitWithScope();
         }
+
+        public async Task<bool> DeleteDeadLetterLogAsync(Guid id)
+        {
+            LogEntryWithScope();
+
+            var deadLetterLog = await _tradingDbContext.DeadLetterLogs
+                .SingleOrDefaultAsync(x => x.Id == id);
+
+            if (deadLetterLog == null)
+            {
+                LogExitWithScope();
+                return false;
+            }
+
+            _tradingDbContext.DeadLetterLogs.Remove(deadLetterLog);
+            await _tradingDbContext.SaveChangesAsync();
+
+            LogExitWithScope();
+
+            return true;
+        }
+
+        public async Task<int> DeleteAllDeadLetterLogsAsync()
+        {
+            LogEntryWithScope();
+
+            var deadLetterLogs = await _tradingDbContext.DeadLetterLogs.ToListAsync();
+            var count = deadLetterLogs.Count;
+
+            if (count > 0)
+            {
+                _tradingDbContext.DeadLetterLogs.RemoveRange(deadLetterLogs);
+                await _tradingDbContext.SaveChangesAsync();
+            }
+
+            LogExitWithScope();
+
+            return count;
+        }
     }
 }

@@ -14,6 +14,8 @@ namespace TradingApp.Business
                     .AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IDeadLetterService, DeadLetterService>();
             services.AddScoped<IDeadLetterRepository, DeadLetterRepository>();
+            services.AddScoped<IOutboxMessageService, OutboxMessageService>();
+            services.AddScoped<IOutboxMessageRepository, OutboxMessageRepository>();
             return services;
         }
     }

@@ -62,5 +62,45 @@ namespace TradingApp.API.Controllers
             var result = await _deadLetterService.GetStatsAsync();
             return Ok(result);
         }
+
+        [HttpGet("by-client-order/{clientOrderId}")]
+        public async Task<ActionResult> GetByClientOrderIdAsync([FromRoute] Guid clientOrderId)
+        {
+            var result = await _deadLetterService.GetByClientOrderIdAsync(clientOrderId);
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> CreateDeadLetterLogAsync([FromBody] CreateDeadLetterRequestDTO createRequest)
+        {
+            var result = await _deadLetterService.CreateDeadLetterLogAsync(createRequest);
+            return Ok(result);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteDeadLetterLogAsync([FromRoute] Guid id)
+        {
+            var deleted = await _deadLetterService.DeleteDeadLetterLogAsync(id);
+
+            if (!deleted)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete]
+        public async Task<ActionResult> DeleteAllDeadLetterLogsAsync()
+        {
+            var deletedCount = await _deadLetterService.DeleteAllDeadLetterLogsAsync();
+            return Ok(new { deletedCount });
+        }
     }
 }

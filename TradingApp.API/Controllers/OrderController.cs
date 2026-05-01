@@ -36,5 +36,25 @@ namespace TradingApp.API.Controllers
             var result = await _orderService.GetOrdersAsync();
             return Ok(result);
         }
+
+        [HttpDelete("{orderId}")]
+        public async Task<ActionResult> DeleteOrderAsync([FromRoute] Guid orderId)
+        {
+            var deleted = await _orderService.DeleteOrderAsync(orderId);
+
+            if (!deleted)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete]
+        public async Task<ActionResult> DeleteAllOrdersAsync()
+        {
+            var deletedCount = await _orderService.DeleteAllOrdersAsync();
+            return Ok(new { deletedCount });
+        }
     }
 }

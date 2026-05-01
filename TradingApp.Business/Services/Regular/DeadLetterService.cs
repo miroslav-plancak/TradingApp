@@ -34,6 +34,46 @@ namespace TradingApp.Business.Services.Regular
             return DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
         }
 
+        public Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(CreateDeadLetterRequestDTO createRequest)
+        {
+            return CreateDeadLetterLogAsync(createRequest.MessageBody, createRequest.ClientOrderId, createRequest.Reason);
+        }
+
+        public async Task<DeadLetterLogResponseDTO> GetByClientOrderIdAsync(Guid clientOrderId)
+        {
+            LogEntryWithScope();
+
+            var deadLetterLog = await _deadLetterRepository.GetByClientOrderIdAsync(clientOrderId);
+            var deadLetterDTO = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
+
+            LogExitWithScope();
+
+            return deadLetterDTO;
+        }
+
+        public async Task<bool> DeleteDeadLetterLogAsync(Guid id)
+        {
+            LogEntryWithScope();
+
+            var deleted = await _deadLetterRepository.DeleteDeadLetterLogAsync(id);
+
+            LogExitWithScope();
+
+            return deleted;
+        }
+
+        public async Task<int> DeleteAllDeadLetterLogsAsync()
+        {
+            LogEntryWithScope();
+
+            var deletedCount = await _deadLetterRepository.DeleteAllDeadLetterLogsAsync();
+
+            LogExitWithScope();
+
+            return deletedCount;
+        }
+
+
         public async Task<DeadLetterLogResponseDTO> GetDeadLetterLogByIdAsync(Guid id)
         {
             LogEntryWithScope();

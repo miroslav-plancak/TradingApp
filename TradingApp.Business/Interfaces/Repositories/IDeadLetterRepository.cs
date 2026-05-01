@@ -16,5 +16,7 @@ namespace TradingApp.Business.Interfaces.Repositories
         Task<DeadLetterLog> GetByClientOrderIdAsync(Guid clientOrderId);
         Task<DeadLetterStatsDTO> GetStatsAsync();
         Task MarkOutboxMessageAsProcessedAsync(Guid clientOrderId);
+        Task<bool> DeleteDeadLetterLogAsync(Guid id);
+        Task<int> DeleteAllDeadLetterLogsAsync();
     }
 }

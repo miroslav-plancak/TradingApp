@@ -58,5 +58,44 @@ namespace TradingApp.Business.Repositories
 
             return result;
         }
+
+        public async Task<bool> DeleteOrderAsync(Guid orderId)
+        {
+            LogEntryWithScope();
+
+            var order = await _tradingDbContext.Orders
+                .SingleOrDefaultAsync(x => x.Id == orderId);
+
+            if (order == null)
+            {
+                LogExitWithScope();
+                return false;
+            }
+
+            _tradingDbContext.Orders.Remove(order);
+            await _tradingDbContext.SaveChangesAsync();
+
+            LogExitWithScope();
+
+            return true;
+        }
+
+        public async Task<int> DeleteAllOrdersAsync()
+        {
+            LogEntryWithScope();
+
+            var orders = await _tradingDbContext.Orders.ToListAsync();
+            var count = orders.Count;
+
+            if (count > 0)
+            {
+                _tradingDbContext.Orders.RemoveRange(orders);
+                await _tradingDbContext.SaveChangesAsync();
+            }
+
+            LogExitWithScope();
+
+            return count;
+        }
     }
 }
