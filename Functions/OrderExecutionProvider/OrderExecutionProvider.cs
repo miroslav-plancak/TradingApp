@@ -33,23 +33,41 @@ namespace OrderExecutionProvider
 
             if (payload == null) return;
 
-            var order = await _tradingDbContext.Orders
-                .FirstOrDefaultAsync(x => x.ClientOrderId == payload.ClientOrderId);
+            //var order = await _tradingDbContext.Orders
+            //    .FirstOrDefaultAsync(x => x.ClientOrderId == payload.ClientOrderId);
 
-            if (order == null) return;
+            //if (order == null) return;
 
-            if (order.IsProcessed)
+            //if (order.IsProcessed)
+            //{
+            //    _logger.LogInformation("Order already processed: {Id}", payload.ClientOrderId);
+            //    return;
+            //}
+
+            //var random = new Random();
+            //order.Status = random.Next(2) == 0 ? OrderStatus.ACKNOWLEDGED : OrderStatus.REJECTED;
+            //order.UpdatedAt = DateTimeOffset.UtcNow;
+            //order.IsProcessed = true;
+
+            //await _tradingDbContext.SaveChangesAsync();
+
+            var random = new Random();
+            var randomStatus = random.Next(2) == 0 ? OrderStatus.ACKNOWLEDGED : OrderStatus.REJECTED;
+
+            var orderRowsAffected = await _tradingDbContext.Orders
+                .Where(x => x.ClientOrderId == payload.ClientOrderId && !x.IsProcessed)
+                .ExecuteUpdateAsync(x => x
+                .SetProperty(x => x.Status, randomStatus)
+                .SetProperty(x => x.IsProcessed, true)
+                .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow));
+
+            if(orderRowsAffected == 0)
             {
-                _logger.LogInformation("Order already processed: {Id}", payload.ClientOrderId);
+                _logger.LogInformation("Order already processed by another instance: {Id}", payload.ClientOrderId);
                 return;
             }
 
-            var random = new Random();
-            order.Status = random.Next(2) == 0 ? OrderStatus.ACKNOWLEDGED : OrderStatus.REJECTED;
-            order.UpdatedAt = DateTimeOffset.UtcNow;
-            order.IsProcessed = true;
-
-            await _tradingDbContext.SaveChangesAsync();
+            _logger.LogInformation("Order processed successfully: {Id}", payload.ClientOrderId);
         }
     }
 }
