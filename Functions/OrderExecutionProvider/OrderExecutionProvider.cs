@@ -33,23 +33,14 @@ namespace OrderExecutionProvider
 
             if (payload == null) return;
 
-            //var order = await _tradingDbContext.Orders
-            //    .FirstOrDefaultAsync(x => x.ClientOrderId == payload.ClientOrderId);
+            var orderExists = await _tradingDbContext.Orders
+                 .AnyAsync(o => o.ClientOrderId == payload.ClientOrderId);
 
-            //if (order == null) return;
-
-            //if (order.IsProcessed)
-            //{
-            //    _logger.LogInformation("Order already processed: {Id}", payload.ClientOrderId);
-            //    return;
-            //}
-
-            //var random = new Random();
-            //order.Status = random.Next(2) == 0 ? OrderStatus.ACKNOWLEDGED : OrderStatus.REJECTED;
-            //order.UpdatedAt = DateTimeOffset.UtcNow;
-            //order.IsProcessed = true;
-
-            //await _tradingDbContext.SaveChangesAsync();
+            if (!orderExists)
+            {
+                _logger.LogWarning("Order not found in local database: {ClientOrderId}. ", payload.ClientOrderId);
+                return;
+            }
 
             var random = new Random();
             var randomStatus = random.Next(2) == 0 ? OrderStatus.ACKNOWLEDGED : OrderStatus.REJECTED;
