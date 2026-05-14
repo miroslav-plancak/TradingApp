@@ -1,9 +1,9 @@
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TradingApp.Domain;
-using TradingApp.Domain.Models.Entities.Order;
 using TradingApp.Domain.Models.Enums;
 
 namespace OrderExecutionProvider
@@ -12,11 +12,17 @@ namespace OrderExecutionProvider
     {
         private readonly ILogger<OrderExecutionProvider> _logger;
         private readonly TradingDbContext _tradingDbContext;
+        private readonly ServiceBusClient _serviceBusClient;
 
-        public OrderExecutionProvider(ILogger<OrderExecutionProvider> logger,TradingDbContext tradingDbContext)
+        public OrderExecutionProvider(
+            ILogger<OrderExecutionProvider> logger,
+            TradingDbContext tradingDbContext,
+            ServiceBusClient serviceBusClient
+            )
         {
             _logger = logger;
             _tradingDbContext = tradingDbContext;
+            _serviceBusClient = serviceBusClient;
         }
 
         [Function("OrderExecutionProvider")]
@@ -59,6 +65,54 @@ namespace OrderExecutionProvider
             }
 
             _logger.LogInformation("Order processed successfully: {Id}", payload.ClientOrderId);
+
+            await PublishOrderProcessedEvent(payload.ClientOrderId, randomStatus);
         }
+
+        private async Task PublishOrderProcessedEvent(Guid clientOrderId, OrderStatus randomStatus)
+        {
+            try
+            {
+                var sender = _serviceBusClient.CreateSender("ORDER_EVENTS_TOPIC");
+
+                var eventPayload = new OrderProcessedEvent
+                {
+                    ClientOrderId = clientOrderId,
+                    Status = randomStatus.ToString(),
+                    ProcessedAt = DateTimeOffset.UtcNow
+                };
+
+                var messageBody = JsonSerializer.Serialize(eventPayload);
+                var message = new ServiceBusMessage(messageBody)
+                {
+                    ContentType = "aplication/json",
+                    Subject = "OrderProcessed"
+                };
+
+                await sender.SendMessageAsync(message);
+
+                _logger.LogInformation(
+                  "Published OrderProcessed event to topic for ClientOrderId: {ClientOrderId}",
+                  clientOrderId);
+            }
+            catch (Exception ex) 
+            {
+                _logger.LogError(ex,
+                  "Failed to publish OrderProcessed event for ClientOrderId: {ClientOrderId}",
+                  clientOrderId);
+            }
+        }
+    }
+
+    internal class OrderPayload
+    {
+        public Guid ClientOrderId { get; set; }
+    }
+
+    internal class OrderProcessedEvent
+    {
+        public Guid ClientOrderId { get; set; }
+        public required string Status { get; set; }
+        public DateTimeOffset ProcessedAt { get; set; }
     }
 }

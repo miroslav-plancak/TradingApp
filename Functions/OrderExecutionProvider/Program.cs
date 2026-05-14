@@ -1,4 +1,5 @@
 using Azure.Identity;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,8 @@ builder.ConfigureFunctionsWebApplication();
 
 builder.Configuration.AddAzureKeyVault(
     new Uri("https://tradingapp-demo-kv.vault.azure.net/"),
-    new DefaultAzureCredential());
+    new DefaultAzureCredential()
+    );
 
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
@@ -22,5 +24,11 @@ builder.Services
 builder.Services.AddDbContext<TradingDbContext>(options =>
     options.UseSqlServer(builder.Configuration["SqlConnectionString"])
 );
+
+builder.Services.AddSingleton(sp =>
+    {
+        var connectionString = Environment.GetEnvironmentVariable("ServiceBusConnection");
+        return new ServiceBusClient(connectionString, new DefaultAzureCredential());
+    });
 
 builder.Build().Run();

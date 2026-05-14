@@ -1,4 +1,3 @@
-using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -111,9 +110,8 @@ namespace DeadLetterQueueProcessor
 
         private async Task SendAlertToOpsTeam(Guid clientOrderId)
         {
-            // Implement based on your notification system (email, Slack, Teams, etc.)
             _logger.LogWarning(
-                "ALERT: Dead letter detected - ClientOrderId: {ClientOrderId}",
+                "Dead letter detected - ClientOrderId: {ClientOrderId}",
                 clientOrderId
                 );
 
