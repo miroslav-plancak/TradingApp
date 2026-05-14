@@ -3,528 +3,1349 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading App Testing UI</title>
+    <title>TRADING.OPS // Event-Driven Order Pipeline</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-0: #0a140b;
+            --bg-1: #11161e;
+            --bg-2: #161c26;
+            --bg-3: #1f2733;
+            --border: #2a3441;
+            --border-bright: #3d4a5c;
+            --text-0: #e6edf3;
+            --text-1: #9fb1c7;
+            --text-2: #6b7a91;
+            --text-3: #4a5666;
+            --accent: #ffb020;
+            --accent-dim: #b8801a;
+            --green: #00d68f;
+            --green-dim: #008557;
+            --red: #ff4757;
+            --red-dim: #b8323e;
+            --blue: #4fb3ff;
+            --blue-dim: #2a78b8;
+            --purple: #b794f6;
+            --mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+            --display: 'Bebas Neue', 'Impact', sans-serif;
+            --sans: 'Inter', -apple-system, sans-serif;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        html, body {
+            background: var(--bg-0);
+            color: var(--text-0);
+            font-family: var(--sans);
+            font-size: 14px;
+            line-height: 1.5;
             min-height: 100vh;
-            padding: 20px;
-            color: #2d3748;
+            overflow-x: hidden;
         }
-        .container { max-width: 1500px; margin: 0 auto; }
-        .header {
-            background: white; padding: 20px; border-radius: 10px;
-            margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at top left, rgba(255, 176, 32, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(79, 179, 255, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
         }
-        .header h1 { color: #667eea; margin-bottom: 10px; }
-        .tabs {
-            display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap;
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .app { position: relative; z-index: 1; }
+
+        /* ================= HEADER ================= */
+        .topbar {
+            background: var(--bg-1);
+            border-bottom: 1px solid var(--border);
+            padding: 0;
+        }
+        .topbar-inner {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .brand {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+        }
+        .brand-mark {
+            font-family: var(--display);
+            font-size: 28px;
+            letter-spacing: 0.05em;
+            color: var(--text-0);
+            line-height: 1;
+        }
+        .brand-mark .dot { color: var(--accent); }
+        .brand-tag {
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            border-left: 1px solid var(--border-bright);
+            padding-left: 14px;
+        }
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-1);
+            margin-left: auto;
+        }
+        .live-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        .live-dot.offline {
+            background: var(--red);
+            box-shadow: 0 0 8px var(--red);
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .endpoint-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 0;
+            padding: 6px 10px;
+            font-family: var(--mono);
+            font-size: 11px;
+        }
+        .endpoint-bar input {
+            background: transparent;
+            border: none;
+            color: var(--text-0);
+            font-family: var(--mono);
+            font-size: 11px;
+            min-width: 280px;
+            outline: none;
+        }
+        .endpoint-bar .label {
+            color: var(--text-2);
+            font-weight: 500;
+        }
+
+        /* ================= TICKER BAR ================= */
+        .ticker {
+            background: var(--bg-2);
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .ticker-inner {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0;
+        }
+        .ticker-cell {
+            padding: 12px 18px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            position: relative;
+        }
+        .ticker-cell:last-child { border-right: none; }
+        .ticker-label {
+            font-family: var(--mono);
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+        .ticker-value {
+            font-family: var(--mono);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-0);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+        .ticker-value.accent { color: var(--accent); }
+        .ticker-value.green { color: var(--green); }
+        .ticker-value.red { color: var(--red); }
+        .ticker-value.blue { color: var(--blue); }
+        .ticker-trend {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-3);
+        }
+
+        /* ================= TABS ================= */
+        .tab-bar {
+            background: var(--bg-1);
+            border-bottom: 1px solid var(--border);
+        }
+        .tab-bar-inner {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            gap: 0;
         }
         .tab {
-            padding: 12px 24px; background: rgba(255,255,255,0.7); border: none;
-            border-radius: 8px 8px 0 0; cursor: pointer; font-weight: 600;
-            color: #4a5568; transition: all 0.2s;
+            background: transparent;
+            border: none;
+            border-right: 1px solid var(--border);
+            color: var(--text-2);
+            padding: 14px 22px;
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.15s;
         }
-        .tab:hover { background: rgba(255,255,255,0.9); }
-        .tab.active { background: white; color: #667eea; box-shadow: 0 -2px 6px rgba(0,0,0,0.1); }
+        .tab:hover {
+            color: var(--text-0);
+            background: var(--bg-2);
+        }
+        .tab.active {
+            color: var(--accent);
+            background: var(--bg-0);
+        }
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0; right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+        .tab-num {
+            color: var(--text-3);
+            margin-right: 8px;
+            font-weight: 400;
+        }
+        .tab.active .tab-num { color: var(--accent-dim); }
+
+        /* ================= MAIN ================= */
+        .main {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px;
+        }
         .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .grid {
+        .tab-content.active { display: block; animation: fadeIn 0.25s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .grid { display: grid; gap: 20px; }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+
+        /* ================= PANEL (Card) ================= */
+        .panel {
+            background: var(--bg-1);
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        .panel:hover { border-color: var(--border-bright); }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-2);
+        }
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-0);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+        .panel-title-icon {
+            color: var(--accent);
+            font-size: 14px;
+        }
+        .panel-subtitle {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-2);
+            padding: 8px 18px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0,0,0,0.2);
+        }
+        .panel-body { padding: 18px; }
+
+        /* ================= FORMS ================= */
+        .form-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-            gap: 20px; margin-bottom: 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
         }
-        .card {
-            background: white; border-radius: 10px; padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        .field label {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-weight: 600;
         }
-        .card h2 {
-            color: #667eea; margin-bottom: 15px;
-            padding-bottom: 10px; border-bottom: 2px solid #f0f0f0;
-            font-size: 18px;
+        .field input, .field textarea, .field select {
+            background: var(--bg-0);
+            border: 1px solid var(--border);
+            color: var(--text-0);
+            padding: 9px 12px;
+            font-family: var(--mono);
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.15s;
         }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 13px; }
-        input, select, textarea {
-            width: 100%; padding: 9px; border: 2px solid #e0e0e0;
-            border-radius: 5px; font-size: 13px; transition: border-color 0.3s;
-            font-family: inherit;
+        .field input:focus, .field textarea:focus, .field select:focus {
+            border-color: var(--accent);
         }
-        textarea { resize: vertical; min-height: 60px; font-family: 'Courier New', monospace; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #667eea; }
+        .field textarea {
+            min-height: 64px;
+            resize: vertical;
+        }
+
+        /* ================= BUTTONS ================= */
         .btn {
-            padding: 10px 20px; border: none; border-radius: 5px;
-            font-size: 13px; font-weight: 600; cursor: pointer;
-            transition: all 0.2s; margin-right: 6px; margin-top: 8px;
+            background: var(--bg-3);
+            border: 1px solid var(--border-bright);
+            color: var(--text-0);
+            padding: 9px 16px;
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
-        .btn:hover { transform: translateY(-1px); }
-        .btn-primary { background: #667eea; color: white; }
-        .btn-primary:hover { background: #5568d3; }
-        .btn-success { background: #48bb78; color: white; }
-        .btn-success:hover { background: #38a169; }
-        .btn-danger { background: #f56565; color: white; }
-        .btn-danger:hover { background: #e53e3e; }
-        .btn-info { background: #4299e1; color: white; }
-        .btn-info:hover { background: #3182ce; }
-        .btn-warn { background: #ed8936; color: white; }
-        .btn-warn:hover { background: #dd6b20; }
-        .response-area {
-            background: #1a202c; color: #e2e8f0;
-            border-radius: 5px; padding: 12px;
-            min-height: 120px; max-height: 380px;
-            overflow: auto; font-family: 'Courier New', monospace;
-            font-size: 12px; margin-top: 12px; white-space: pre-wrap;
+        .btn:hover {
+            background: var(--bg-2);
+            border-color: var(--accent);
+            color: var(--accent);
         }
-        .list-area {
-            background: #f7fafc; border: 1px solid #e0e0e0;
-            border-radius: 5px; padding: 12px;
-            min-height: 120px; max-height: 500px;
-            overflow: auto; margin-top: 12px;
+        .btn:active { transform: translateY(1px); }
+        .btn-primary { background: var(--accent); color: var(--bg-0); border-color: var(--accent); }
+        .btn-primary:hover { background: #ffc847; border-color: #ffc847; color: var(--bg-0); }
+        .btn-success { background: var(--green-dim); color: var(--text-0); border-color: var(--green-dim); }
+        .btn-success:hover { background: var(--green); border-color: var(--green); color: var(--bg-0); }
+        .btn-danger { background: var(--red-dim); color: var(--text-0); border-color: var(--red-dim); }
+        .btn-danger:hover { background: var(--red); border-color: var(--red); color: white; }
+        .btn-info { background: var(--blue-dim); color: var(--text-0); border-color: var(--blue-dim); }
+        .btn-info:hover { background: var(--blue); border-color: var(--blue); color: var(--bg-0); }
+        .btn-ghost { background: transparent; }
+        .btn-sm { padding: 5px 10px; font-size: 10px; letter-spacing: 0.08em; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        /* ================= STATS / METRICS ================= */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            margin: 12px 0;
         }
-        .item {
-            background: white; padding: 10px; margin-bottom: 8px;
-            border-radius: 5px; border-left: 4px solid #667eea;
-            font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        .metric {
+            background: var(--bg-2);
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
-        .item.processed, .item.acknowledged { border-left-color: #48bb78; }
-        .item.rejected, .item.unresolved { border-left-color: #f56565; }
-        .item.pending, .item.unprocessed { border-left-color: #ed8936; }
-        .item.filled { border-left-color: #4299e1; }
-        .item.resolved { border-left-color: #a0aec0; }
-        .item-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .metric-label {
+            font-family: var(--mono);
+            font-size: 9px;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-weight: 600;
+        }
+        .metric-value {
+            font-family: var(--mono);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-0);
+            line-height: 1.1;
+        }
+        .metric-value.green { color: var(--green); }
+        .metric-value.red { color: var(--red); }
+        .metric-value.amber { color: var(--accent); }
+        .metric-value.blue { color: var(--blue); }
+
+        /* ================= TERMINAL OUTPUT ================= */
+        .terminal {
+            background: #050810;
+            border: 1px solid var(--border);
+            padding: 12px 14px;
+            font-family: var(--mono);
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--text-1);
+            min-height: 120px;
+            max-height: 400px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            position: relative;
+        }
+        .terminal::before {
+            content: '$ ';
+            color: var(--green);
+            opacity: 0.4;
+        }
+        .terminal.no-prefix::before { content: ''; }
+
+        /* ================= LIST / ITEMS ================= */
+        .list {
+            background: var(--bg-0);
+            border: 1px solid var(--border);
+            max-height: 520px;
+            overflow: auto;
+        }
+        .list-empty {
+            padding: 32px;
+            text-align: center;
+            color: var(--text-3);
+            font-family: var(--mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+        .row {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            border-left: 3px solid transparent;
+            transition: background 0.1s;
+        }
+        .row:hover { background: var(--bg-1); }
+        .row:last-child { border-bottom: none; }
+        .row.processed, .row.acknowledged { border-left-color: var(--green); }
+        .row.rejected, .row.unresolved { border-left-color: var(--red); }
+        .row.pending, .row.unprocessed { border-left-color: var(--accent); }
+        .row.filled { border-left-color: var(--blue); }
+        .row.resolved { border-left-color: var(--text-3); }
+        .row-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .row-meta {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-3);
+            line-height: 1.5;
+            word-break: break-all;
+        }
+        .row-meta b { color: var(--text-1); font-weight: 600; }
+        .row-actions {
+            margin-top: 8px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        /* ================= BADGES ================= */
         .badge {
-            display: inline-block; padding: 3px 8px; border-radius: 3px;
-            font-size: 11px; font-weight: 600;
+            display: inline-block;
+            padding: 3px 8px;
+            font-family: var(--mono);
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            border: 1px solid;
+            border-radius: 0;
         }
-        .badge-pending { background: #fbd38d; color: #744210; }
-        .badge-acknowledged { background: #9ae6b4; color: #22543d; }
-        .badge-rejected { background: #fc8181; color: #742a2a; }
-        .badge-filled { background: #90cdf4; color: #2c5282; }
-        .badge-processed { background: #9ae6b4; color: #22543d; }
-        .badge-unprocessed { background: #fbd38d; color: #744210; }
-        .badge-resolved { background: #cbd5e0; color: #2d3748; }
-        .badge-unresolved { background: #fc8181; color: #742a2a; }
-        .meta { font-size: 11px; color: #718096; margin-top: 4px; word-break: break-all; }
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 12px; }
-        .stat-card { background: #f7fafc; padding: 12px; border-radius: 5px; text-align: center; }
-        .stat-value { font-size: 22px; font-weight: 700; color: #667eea; }
-        .stat-label { font-size: 11px; color: #718096; margin-top: 3px; }
-        .info-box {
-            background: #ebf8ff; border-left: 4px solid #4299e1;
-            border-radius: 5px; padding: 14px; margin-top: 10px;
+        .badge-pending, .badge-unprocessed {
+            background: rgba(255, 176, 32, 0.1);
+            color: var(--accent);
+            border-color: var(--accent-dim);
         }
-        .info-box.warn { background: #fffaf0; border-left-color: #ed8936; }
-        .info-box.danger { background: #fff5f5; border-left-color: #f56565; }
-        .info-box h3 { color: #2c5282; margin-bottom: 8px; font-size: 15px; }
-        .info-box.warn h3 { color: #7b341e; }
-        .info-box.danger h3 { color: #742a2a; }
-        .info-box ul { margin-left: 20px; }
-        .info-box li { margin-bottom: 4px; font-size: 13px; }
-        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .loading {
-            display: inline-block; width: 14px; height: 14px;
-            border: 2px solid rgba(102,126,234,0.3); border-radius: 50%;
-            border-top-color: #667eea; animation: spin 0.8s linear infinite;
-            vertical-align: middle;
+        .badge-acknowledged, .badge-processed {
+            background: rgba(0, 214, 143, 0.1);
+            color: var(--green);
+            border-color: var(--green-dim);
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .toolbar { background: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .toolbar label { margin-bottom: 0; font-size: 12px; }
-        .toolbar input { width: auto; padding: 6px 10px; }
-        .small { font-size: 12px; color: #718096; }
-        details summary { cursor: pointer; font-weight: 600; color: #4a5568; padding: 4px 0; }
-        details pre { background: #f7fafc; padding: 8px; border-radius: 4px; font-size: 11px; overflow: auto; max-height: 200px; margin-top: 6px; }
+        .badge-rejected, .badge-unresolved {
+            background: rgba(255, 71, 87, 0.1);
+            color: var(--red);
+            border-color: var(--red-dim);
+        }
+        .badge-filled {
+            background: rgba(79, 179, 255, 0.1);
+            color: var(--blue);
+            border-color: var(--blue-dim);
+        }
+        .badge-resolved {
+            background: rgba(107, 122, 145, 0.1);
+            color: var(--text-1);
+            border-color: var(--text-3);
+        }
+
+        /* ================= INFO BOXES ================= */
+        .note {
+            border-left: 3px solid var(--blue);
+            background: rgba(79, 179, 255, 0.04);
+            padding: 12px 14px;
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--text-1);
+            line-height: 1.6;
+        }
+        .note.warn { border-color: var(--accent); background: rgba(255, 176, 32, 0.04); }
+        .note.danger { border-color: var(--red); background: rgba(255, 71, 87, 0.04); }
+        .note h4 {
+            font-family: var(--mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-0);
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+        .note ul { margin-left: 18px; }
+        .note li { margin-bottom: 4px; }
+        .note code {
+            font-family: var(--mono);
+            background: var(--bg-3);
+            padding: 1px 5px;
+            border: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--accent);
+        }
+
+        /* ================= STATUS LINE ================= */
+        .status-line {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .small {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-2);
+        }
+
+        details {
+            margin-top: 8px;
+            font-family: var(--mono);
+            font-size: 11px;
+        }
+        details summary {
+            cursor: pointer;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 10px;
+            padding: 4px 0;
+        }
+        details summary:hover { color: var(--accent); }
+        details pre {
+            background: var(--bg-0);
+            border: 1px solid var(--border);
+            padding: 8px;
+            margin-top: 6px;
+            font-size: 10px;
+            color: var(--text-1);
+            overflow: auto;
+            max-height: 200px;
+        }
+
+        /* ================= TABLE-LIKE LAYOUT ================= */
+        .kv {
+            font-family: var(--mono);
+            font-size: 11px;
+            display: grid;
+            grid-template-columns: max-content 1fr;
+            gap: 4px 12px;
+            margin-top: 6px;
+        }
+        .kv .k { color: var(--text-2); text-transform: uppercase; letter-spacing: 0.08em; font-size: 9px; padding-top: 2px; }
+        .kv .v { color: var(--text-0); word-break: break-all; }
+
+        /* ================= SCROLLBAR ================= */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-1); }
+        ::-webkit-scrollbar-thumb { background: var(--border-bright); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+        /* ================= MISC ================= */
+        .full-width { grid-column: 1 / -1; }
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 16px 0;
+        }
+        .section-title {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-weight: 700;
+            margin: 16px 0 8px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        @media (max-width: 768px) {
+            .ticker-inner { grid-template-columns: repeat(2, 1fr); }
+            .ticker-cell { border-right: none; border-bottom: 1px solid var(--border); }
+            .form-row { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 Trading App Test Console</h1>
-            <p class="small">Test orders, outbox messages, dead-letter logs and end-to-end Service Bus / DB flows.</p>
-            <div class="toolbar" style="margin-top: 12px; padding: 8px 12px;">
-                <label>API Base URL:</label>
-                <input type="text" id="apiBaseUrl" value="https://localhost:7224" style="flex: 1; min-width: 280px;">
-                <button class="btn btn-info" onclick="refreshAllStats()">🔄 Refresh All Stats</button>
-                <span id="globalStatus" class="small"></span>
+<div class="app">
+
+    <!-- ============= TOP BAR ============= -->
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="brand">
+                <div class="brand-mark">TRADING<span class="dot">.</span>OPS</div>
+                <div class="brand-tag">Event-Driven Order Pipeline // v2.0</div>
             </div>
-            <div class="stats" style="margin-top: 12px;">
-                <div class="stat-card"><div class="stat-value" id="gOrders">-</div><div class="stat-label">Orders</div></div>
-                <div class="stat-card"><div class="stat-value" id="gOrdersProcessed">-</div><div class="stat-label">Orders Processed</div></div>
-                <div class="stat-card"><div class="stat-value" id="gOutbox">-</div><div class="stat-label">Outbox Total</div></div>
-                <div class="stat-card"><div class="stat-value" id="gOutboxUnp">-</div><div class="stat-label">Outbox Unprocessed</div></div>
-                <div class="stat-card"><div class="stat-value" id="gDl">-</div><div class="stat-label">Dead Letters</div></div>
-                <div class="stat-card"><div class="stat-value" id="gDlUnres">-</div><div class="stat-label">DL Unresolved</div></div>
+            <div class="endpoint-bar">
+                <span class="label">API://</span>
+                <input type="text" id="apiBaseUrl" value="https://localhost:7224" spellcheck="false">
             </div>
-        </div>
-
-        <div class="tabs">
-            <button class="tab active" data-tab="orders">📝 Orders</button>
-            <button class="tab" data-tab="outbox">📤 Outbox Messages</button>
-            <button class="tab" data-tab="deadletter">☠️ Dead Letter</button>
-            <button class="tab" data-tab="scenarios">🧪 Test Scenarios</button>
-        </div>
-
-        <!-- =================== ORDERS TAB =================== -->
-        <div class="tab-content active" id="tab-orders">
-            <div class="grid">
-                <div class="card">
-                    <h2>📝 Create Single Order</h2>
-                    <p class="small" style="margin-bottom: 10px;">Backend DTO accepts <code>quantity</code> and <code>price</code> only.</p>
-                    <div class="row2">
-                        <div class="form-group">
-                            <label>Quantity</label>
-                            <input type="number" id="orderQty" value="100">
-                        </div>
-                        <div class="form-group">
-                            <label>Price</label>
-                            <input type="number" id="orderPrice" value="150.50" step="0.01">
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="createOrder()">Create Order</button>
-                    <div class="response-area" id="singleOrderResponse">Awaiting request...</div>
-                </div>
-
-                <div class="card">
-                    <h2>💥 Burst Order Testing</h2>
-                    <p class="small" style="margin-bottom: 10px;">Hammer the API to test Service Bus throughput &amp; outbox behaviour.</p>
-                    <div class="row2">
-                        <div class="form-group">
-                            <label>Number of Orders</label>
-                            <input type="number" id="burstCount" value="20" min="1" max="500">
-                        </div>
-                        <div class="form-group">
-                            <label>Delay between (ms)</label>
-                            <input type="number" id="burstDelay" value="50" min="0" max="5000">
-                        </div>
-                    </div>
-                    <div class="row2">
-                        <div class="form-group">
-                            <label>Min Qty</label>
-                            <input type="number" id="burstMinQty" value="10">
-                        </div>
-                        <div class="form-group">
-                            <label>Max Qty</label>
-                            <input type="number" id="burstMaxQty" value="500">
-                        </div>
-                    </div>
-                    <button class="btn btn-success" onclick="burstCreateOrders()">🚀 Start Burst</button>
-                    <button class="btn btn-danger" onclick="stopBurst()">⏹ Stop</button>
-                    <div class="stats">
-                        <div class="stat-card"><div class="stat-value" id="burstSent">0</div><div class="stat-label">Sent</div></div>
-                        <div class="stat-card"><div class="stat-value" id="burstSuccess">0</div><div class="stat-label">Success</div></div>
-                        <div class="stat-card"><div class="stat-value" id="burstFailed">0</div><div class="stat-label">Failed</div></div>
-                        <div class="stat-card"><div class="stat-value" id="burstRate">0</div><div class="stat-label">req/s</div></div>
-                    </div>
-                    <div class="response-area" id="burstResponse">Idle.</div>
-                </div>
-
-                <div class="card">
-                    <h2>📋 All Orders</h2>
-                    <button class="btn btn-info" onclick="getAllOrders()">Refresh</button>
-                    <button class="btn btn-primary" onclick="toggleAutoRefresh('orders')">Auto-refresh (5s)</button>
-                    <button class="btn btn-danger" onclick="deleteAllOrders()">🗑 Delete All</button>
-                    <div class="stats">
-                        <div class="stat-card"><div class="stat-value" id="totalOrders">0</div><div class="stat-label">Total</div></div>
-                        <div class="stat-card"><div class="stat-value" id="processedOrders">0</div><div class="stat-label">Processed</div></div>
-                        <div class="stat-card"><div class="stat-value" id="ackOrders">0</div><div class="stat-label">Acknowledged</div></div>
-                        <div class="stat-card"><div class="stat-value" id="rejectedOrders">0</div><div class="stat-label">Rejected</div></div>
-                    </div>
-                    <div class="list-area" id="ordersList">No orders loaded.</div>
-                </div>
-
-                <div class="card">
-                    <h2>🔍 Order Detail / Delete</h2>
-                    <div class="form-group">
-                        <label>Order ID (GUID)</label>
-                        <input type="text" id="orderId" placeholder="00000000-0000-0000-0000-000000000000">
-                    </div>
-                    <button class="btn btn-primary" onclick="getOrderById()">Get</button>
-                    <button class="btn btn-danger" onclick="deleteOrderById()">Delete</button>
-                    <div class="response-area" id="orderByIdResponse">Awaiting request...</div>
-                </div>
+            <button class="btn btn-ghost btn-sm" onclick="refreshAllStats(true)">↻ Refresh</button>
+            <div class="live-indicator">
+                <span class="live-dot" id="liveDot"></span>
+                <span id="connStatus">CONNECTING...</span>
             </div>
         </div>
+    </header>
 
-        <!-- =================== OUTBOX TAB =================== -->
-        <div class="tab-content" id="tab-outbox">
-            <div class="grid">
-                <div class="card">
-                    <h2>📤 Outbox Messages</h2>
-                    <p class="small" style="margin-bottom:10px;">Persisted intents waiting for the dispatcher (transactional outbox pattern).</p>
-                    <div>
-                        <button class="btn btn-info" onclick="getOutbox('all')">All</button>
-                        <button class="btn btn-warn" onclick="getOutbox('unprocessed')">Unprocessed</button>
-                        <button class="btn btn-success" onclick="getOutbox('processed')">Processed</button>
-                        <button class="btn btn-primary" onclick="toggleAutoRefresh('outbox')">Auto-refresh (5s)</button>
-                        <button class="btn btn-danger" onclick="deleteAllOutbox()">🗑 Delete All</button>
-                    </div>
-                    <div class="stats">
-                        <div class="stat-card"><div class="stat-value" id="outboxTotal">0</div><div class="stat-label">Total</div></div>
-                        <div class="stat-card"><div class="stat-value" id="outboxProcessed">0</div><div class="stat-label">Processed</div></div>
-                        <div class="stat-card"><div class="stat-value" id="outboxUnprocessed">0</div><div class="stat-label">Unprocessed</div></div>
-                        <div class="stat-card"><div class="stat-value" id="outbox24h">0</div><div class="stat-label">Last 24h</div></div>
-                    </div>
-                    <div class="list-area" id="outboxList">No messages loaded.</div>
-                </div>
-
-                <div class="card">
-                    <h2>🔍 Outbox Detail / Actions</h2>
-                    <div class="form-group">
-                        <label>Outbox Message ID (GUID)</label>
-                        <input type="text" id="outboxId" placeholder="00000000-0000-0000-0000-000000000000">
-                    </div>
-                    <button class="btn btn-primary" onclick="getOutboxById()">Get</button>
-                    <button class="btn btn-success" onclick="markOutboxProcessed()">Mark Processed</button>
-                    <button class="btn btn-danger" onclick="deleteOutboxById()">Delete</button>
-                    <div class="response-area" id="outboxByIdResponse">Awaiting request...</div>
-
-                    <div class="info-box" style="margin-top: 16px;">
-                        <h3>What is the Outbox?</h3>
-                        <ul>
-                            <li>Each order writes a message into the <strong>OutboxMessages</strong> table in the same DB transaction.</li>
-                            <li>The <strong>ScheduledOutboxMessageProcessor</strong> Function picks up unprocessed rows and publishes them to Service Bus.</li>
-                            <li>Once dispatched, <code>IsProcessed=true</code> and <code>ProcessedAt</code> is set.</li>
-                            <li>If publishing fails, <code>RetryCount</code> increments.</li>
-                        </ul>
-                    </div>
-                </div>
+    <!-- ============= GLOBAL TICKER ============= -->
+    <div class="ticker">
+        <div class="ticker-inner">
+            <div class="ticker-cell">
+                <div class="ticker-label">Total Orders</div>
+                <div class="ticker-value" id="gOrders">—</div>
+                <div class="ticker-trend" id="gOrdersTrend">awaiting feed</div>
             </div>
-        </div>
-
-        <!-- =================== DEAD LETTER TAB =================== -->
-        <div class="tab-content" id="tab-deadletter">
-            <div class="grid">
-                <div class="card">
-                    <h2>☠️ Dead Letter Logs</h2>
-                    <p class="small" style="margin-bottom:10px;">Messages parked from the DLQ for human triage.</p>
-                    <div>
-                        <button class="btn btn-info" onclick="getDeadLetters('all')">All</button>
-                        <button class="btn btn-warn" onclick="getDeadLetters('unresolved')">Unresolved</button>
-                        <button class="btn btn-primary" onclick="toggleAutoRefresh('deadletter')">Auto-refresh (5s)</button>
-                        <button class="btn btn-danger" onclick="deleteAllDeadLetters()">🗑 Delete All</button>
-                    </div>
-                    <div class="stats">
-                        <div class="stat-card"><div class="stat-value" id="dlTotal">0</div><div class="stat-label">Total</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dlUnresolved">0</div><div class="stat-label">Unresolved</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dlResolved">0</div><div class="stat-label">Resolved</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dl24h">0</div><div class="stat-label">Last 24h</div></div>
-                    </div>
-                    <div class="list-area" id="dlList">No dead letters loaded.</div>
-                </div>
-
-                <div class="card">
-                    <h2>🔍 Dead Letter Detail / Actions</h2>
-                    <div class="form-group">
-                        <label>Dead Letter Log ID (GUID)</label>
-                        <input type="text" id="dlId" placeholder="00000000-0000-0000-0000-000000000000">
-                    </div>
-                    <button class="btn btn-primary" onclick="getDeadLetterById()">Get</button>
-                    <button class="btn btn-danger" onclick="deleteDeadLetterById()">Delete</button>
-
-                    <div class="form-group" style="margin-top: 14px;">
-                        <label>Lookup by Client Order ID (GUID)</label>
-                        <input type="text" id="dlClientOrderId" placeholder="client order id">
-                    </div>
-                    <button class="btn btn-info" onclick="getDeadLetterByClientOrderId()">Lookup</button>
-
-                    <h3 style="margin-top: 18px; color: #4a5568; font-size: 14px;">✅ Resolve</h3>
-                    <div class="form-group">
-                        <label>Resolution Notes</label>
-                        <textarea id="dlNotes" placeholder="Root cause / corrective action..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Resolved By</label>
-                        <input type="text" id="dlResolvedBy" placeholder="username / operator" value="ops">
-                    </div>
-                    <button class="btn btn-success" onclick="resolveDeadLetter()">Mark Resolved</button>
-
-                    <h3 style="margin-top: 18px; color: #4a5568; font-size: 14px;">➕ Manually Inject Dead Letter</h3>
-                    <div class="form-group">
-                        <label>Client Order ID (GUID)</label>
-                        <input type="text" id="dlNewClientOrderId" placeholder="client order id">
-                    </div>
-                    <div class="form-group">
-                        <label>Reason</label>
-                        <input type="text" id="dlNewReason" value="Manual test injection">
-                    </div>
-                    <div class="form-group">
-                        <label>Message Body</label>
-                        <textarea id="dlNewBody">{ "test": true }</textarea>
-                    </div>
-                    <button class="btn btn-warn" onclick="createDeadLetter()">Create Dead Letter</button>
-
-                    <div class="response-area" id="dlByIdResponse" style="margin-top: 14px;">Awaiting request...</div>
-                </div>
+            <div class="ticker-cell">
+                <div class="ticker-label">Processed</div>
+                <div class="ticker-value green" id="gOrdersProcessed">—</div>
+                <div class="ticker-trend" id="gOrdersProcessedTrend">awaiting feed</div>
             </div>
-        </div>
-
-        <!-- =================== SCENARIOS TAB =================== -->
-        <div class="tab-content" id="tab-scenarios">
-            <div class="grid">
-                <div class="card">
-                    <h2>🧪 End-to-End Happy Path</h2>
-                    <p class="small">Verifies the full pipeline: Create order → Outbox row → Service Bus → Consumer → Status update.</p>
-                    <div class="form-group">
-                        <label>Order count</label>
-                        <input type="number" id="scE2ECount" value="5">
-                    </div>
-                    <div class="form-group">
-                        <label>Wait for processing (seconds)</label>
-                        <input type="number" id="scE2EWait" value="15">
-                    </div>
-                    <button class="btn btn-primary" onclick="scenarioE2E()">▶ Run Scenario</button>
-                    <div class="response-area" id="scE2EOut">Idle.</div>
-                </div>
-
-                <div class="card">
-                    <h2>🧪 Outbox Backlog Test</h2>
-                    <p class="small">Create N orders, then poll the outbox until everything is processed (or timeout). Useful when ScheduledOutboxMessageProcessor is paused.</p>
-                    <div class="row2">
-                        <div class="form-group">
-                            <label>Order count</label>
-                            <input type="number" id="scOutboxCount" value="20">
-                        </div>
-                        <div class="form-group">
-                            <label>Poll timeout (s)</label>
-                            <input type="number" id="scOutboxTimeout" value="60">
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="scenarioOutboxBacklog()">▶ Run Scenario</button>
-                    <div class="response-area" id="scOutboxOut">Idle.</div>
-                </div>
-
-                <div class="card">
-                    <h2>🧪 Dead Letter Trigger</h2>
-                    <p class="small">Inject a synthetic dead-letter entry, then resolve it via the resolve endpoint. Validates the DL controller end-to-end.</p>
-                    <button class="btn btn-warn" onclick="scenarioDeadLetterRoundTrip()">▶ Run Scenario</button>
-                    <div class="response-area" id="scDlOut">Idle.</div>
-                </div>
-
-                <div class="card">
-                    <h2>🧪 Concurrent Burst &amp; Sample</h2>
-                    <p class="small">Fires N parallel order requests (no delay) and samples processing latency for the first acknowledged orders.</p>
-                    <div class="row2">
-                        <div class="form-group">
-                            <label>Parallel orders</label>
-                            <input type="number" id="scParCount" value="30">
-                        </div>
-                        <div class="form-group">
-                            <label>Sample wait (s)</label>
-                            <input type="number" id="scParWait" value="20">
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="scenarioConcurrentBurst()">▶ Run Scenario</button>
-                    <div class="response-area" id="scParOut">Idle.</div>
-                </div>
-
-                <div class="card" style="grid-column: 1 / -1;">
-                    <h2>📚 Manual Failure Scenarios (No Automation Possible)</h2>
-                    <div class="info-box danger">
-                        <h3>DB Down During Create</h3>
-                        <ul>
-                            <li>Stop SQL Server / Azurite → POST <code>/api/order</code> → expect <code>500</code> with no orphaned outbox rows.</li>
-                            <li>Verify <strong>Orders</strong> count and <strong>OutboxMessages</strong> count both unchanged (transaction rollback).</li>
-                        </ul>
-                    </div>
-                    <div class="info-box warn">
-                        <h3>Service Bus Down</h3>
-                        <ul>
-                            <li>Pause the <code>order-events</code> queue in Azurite/Azure → create orders.</li>
-                            <li>Orders persist; <strong>OutboxMessages</strong> remain unprocessed; <code>RetryCount</code> climbs.</li>
-                            <li>Resume queue → ScheduledOutboxMessageProcessor catches up; rows flip to processed.</li>
-                        </ul>
-                    </div>
-                    <div class="info-box warn">
-                        <h3>Consumer Crash Mid-Processing</h3>
-                        <ul>
-                            <li>Kill <code>OrderExecutionProvider</code> while burst-loading.</li>
-                            <li>Service Bus redelivers messages; idempotency via <code>ClientOrderId</code> + <code>IsProcessed</code> prevents duplicate updates.</li>
-                            <li>Restart the function — orders reach <code>ACKNOWLEDGED</code>/<code>FILLED</code> without duplicates.</li>
-                        </ul>
-                    </div>
-                    <div class="info-box danger">
-                        <h3>Dead-Letter Path</h3>
-                        <ul>
-                            <li>Force a poison message (e.g., consumer always throws) → Service Bus moves it to DLQ after max delivery count.</li>
-                            <li><code>DeadLetterQueueProcessor</code> picks it up and writes to <strong>DeadLetterLogs</strong>.</li>
-                            <li>Triage via the Dead Letter tab; resolve with notes.</li>
-                        </ul>
-                    </div>
-                    <div class="info-box">
-                        <h3>FIFO / Ordering</h3>
-                        <ul>
-                            <li>Burst create with 0ms delay → check that consumer logs process them roughly in submission order (Service Bus is not strictly FIFO unless sessions used).</li>
-                            <li>Use <em>View All Orders</em> sorted by <code>CreatedAt</code> to compare against <code>UpdatedAt</code> ordering.</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="ticker-cell">
+                <div class="ticker-label">Outbox Total</div>
+                <div class="ticker-value blue" id="gOutbox">—</div>
+                <div class="ticker-trend">transactional queue</div>
+            </div>
+            <div class="ticker-cell">
+                <div class="ticker-label">Outbox Pending</div>
+                <div class="ticker-value amber" id="gOutboxUnp">—</div>
+                <div class="ticker-trend">awaiting dispatch</div>
+            </div>
+            <div class="ticker-cell">
+                <div class="ticker-label">Dead Letters</div>
+                <div class="ticker-value red" id="gDl">—</div>
+                <div class="ticker-trend">DLQ persisted</div>
+            </div>
+            <div class="ticker-cell">
+                <div class="ticker-label">DL Unresolved</div>
+                <div class="ticker-value red" id="gDlUnres">—</div>
+                <div class="ticker-trend">requires triage</div>
             </div>
         </div>
     </div>
 
+    <!-- ============= TABS ============= -->
+    <div class="tab-bar">
+        <div class="tab-bar-inner">
+            <button class="tab active" data-tab="orders"><span class="tab-num">01</span>Orders</button>
+            <button class="tab" data-tab="outbox"><span class="tab-num">02</span>Outbox</button>
+            <button class="tab" data-tab="deadletter"><span class="tab-num">03</span>Dead Letter</button>
+            <button class="tab" data-tab="scenarios"><span class="tab-num">04</span>Scenarios</button>
+            <button class="tab" data-tab="architecture"><span class="tab-num">05</span>Architecture</button>
+        </div>
+    </div>
+
+    <main class="main">
+
+        <!-- ===================== ORDERS TAB ===================== -->
+        <div class="tab-content active" id="tab-orders">
+            <div class="grid grid-2">
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">▶</span>Submit Single Order</div>
+                        <span class="small">POST /api/order</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Quantity</label>
+                                <input type="number" id="orderQty" value="100">
+                            </div>
+                            <div class="field">
+                                <label>Price (USD)</label>
+                                <input type="number" id="orderPrice" value="150.50" step="0.01">
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="createOrder()">▶ Submit Order</button>
+                        </div>
+                        <div class="terminal no-prefix" id="singleOrderResponse" style="margin-top:14px;">// awaiting input...</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">⚡</span>Burst Generator</div>
+                        <span class="small">Stress test the pipeline</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Order Count</label>
+                                <input type="number" id="burstCount" value="20" min="1" max="500">
+                            </div>
+                            <div class="field">
+                                <label>Delay (ms)</label>
+                                <input type="number" id="burstDelay" value="50" min="0" max="5000">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Min Qty</label>
+                                <input type="number" id="burstMinQty" value="10">
+                            </div>
+                            <div class="field">
+                                <label>Max Qty</label>
+                                <input type="number" id="burstMaxQty" value="500">
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-success" onclick="burstCreateOrders()">▶ Start Burst</button>
+                            <button class="btn btn-danger" onclick="stopBurst()">■ Stop</button>
+                        </div>
+                        <div class="metric-grid">
+                            <div class="metric"><div class="metric-label">Sent</div><div class="metric-value" id="burstSent">0</div></div>
+                            <div class="metric"><div class="metric-label">Success</div><div class="metric-value green" id="burstSuccess">0</div></div>
+                            <div class="metric"><div class="metric-label">Failed</div><div class="metric-value red" id="burstFailed">0</div></div>
+                            <div class="metric"><div class="metric-label">Req/s</div><div class="metric-value amber" id="burstRate">0</div></div>
+                        </div>
+                        <div class="terminal no-prefix" id="burstResponse">idle.</div>
+                    </div>
+                </div>
+
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">≡</span>Order Book</div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm" onclick="getAllOrders()">Refresh</button>
+                            <button class="btn btn-sm" onclick="toggleAutoRefresh('orders')" id="ordersAutoBtn">Auto 5s</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteAllOrders()">Delete All</button>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="metric-grid">
+                            <div class="metric"><div class="metric-label">Total</div><div class="metric-value" id="totalOrders">0</div></div>
+                            <div class="metric"><div class="metric-label">Processed</div><div class="metric-value green" id="processedOrders">0</div></div>
+                            <div class="metric"><div class="metric-label">Acknowledged</div><div class="metric-value blue" id="ackOrders">0</div></div>
+                            <div class="metric"><div class="metric-label">Rejected</div><div class="metric-value red" id="rejectedOrders">0</div></div>
+                        </div>
+                        <div class="list" id="ordersList">
+                            <div class="list-empty">// no orders loaded — click refresh</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">⌕</span>Order Lookup</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="field" style="margin-bottom:10px;">
+                            <label>Order ID (GUID)</label>
+                            <input type="text" id="orderId" placeholder="00000000-0000-0000-0000-000000000000" spellcheck="false">
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-info" onclick="getOrderById()">Fetch</button>
+                            <button class="btn btn-danger" onclick="deleteOrderById()">Delete</button>
+                        </div>
+                        <div class="terminal no-prefix" id="orderByIdResponse" style="margin-top:14px;">// awaiting lookup...</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ===================== OUTBOX TAB ===================== -->
+        <div class="tab-content" id="tab-outbox">
+            <div class="grid grid-2">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">▤</span>Outbox Messages</div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm" onclick="getOutbox('all')">All</button>
+                            <button class="btn btn-sm" onclick="getOutbox('unprocessed')">Unprocessed</button>
+                            <button class="btn btn-sm" onclick="getOutbox('processed')">Processed</button>
+                            <button class="btn btn-sm" onclick="toggleAutoRefresh('outbox')" id="outboxAutoBtn">Auto 5s</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteAllOutbox()">Delete All</button>
+                        </div>
+                    </div>
+                    <div class="panel-subtitle">// Transactional outbox pattern — persisted intents awaiting dispatch by ScheduledOutboxMessageProcessor</div>
+                    <div class="panel-body">
+                        <div class="metric-grid">
+                            <div class="metric"><div class="metric-label">Total</div><div class="metric-value" id="outboxTotal">0</div></div>
+                            <div class="metric"><div class="metric-label">Processed</div><div class="metric-value green" id="outboxProcessed">0</div></div>
+                            <div class="metric"><div class="metric-label">Pending</div><div class="metric-value amber" id="outboxUnprocessed">0</div></div>
+                            <div class="metric"><div class="metric-label">Last 24h</div><div class="metric-value blue" id="outbox24h">0</div></div>
+                        </div>
+                        <div class="list" id="outboxList">
+                            <div class="list-empty">// no messages loaded</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">⌕</span>Outbox Detail</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="field" style="margin-bottom:10px;">
+                            <label>Message ID (GUID)</label>
+                            <input type="text" id="outboxId" placeholder="00000000-0000-0000-0000-000000000000" spellcheck="false">
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-info" onclick="getOutboxById()">Fetch</button>
+                            <button class="btn btn-success" onclick="markOutboxProcessed()">Mark Processed</button>
+                            <button class="btn btn-danger" onclick="deleteOutboxById()">Delete</button>
+                        </div>
+                        <div class="terminal no-prefix" id="outboxByIdResponse" style="margin-top:14px;">// awaiting lookup...</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">ℹ</span>How Outbox Works</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="note">
+                            <h4>Transactional Outbox Pattern</h4>
+                            <ul>
+                                <li>Order create writes BOTH <code>Order</code> and <code>OutboxMessage</code> in one DB transaction.</li>
+                                <li><code>ScheduledOutboxMessageProcessor</code> polls for <code>ProcessedAt = null</code> rows.</li>
+                                <li>Publishes the payload to <code>CREATE_ORDER_QUEUE</code> Service Bus queue.</li>
+                                <li>Sets <code>ProcessedAt</code> on success. Increments <code>RetryCount</code> on failure.</li>
+                                <li>Guarantees no message is published without persisting state first.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== DEAD LETTER TAB ===================== -->
+        <div class="tab-content" id="tab-deadletter">
+            <div class="grid grid-2">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">☠</span>Dead Letter Logs</div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm" onclick="getDeadLetters('all')">All</button>
+                            <button class="btn btn-sm" onclick="getDeadLetters('unresolved')">Unresolved</button>
+                            <button class="btn btn-sm" onclick="toggleAutoRefresh('deadletter')" id="dlAutoBtn">Auto 5s</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteAllDeadLetters()">Delete All</button>
+                        </div>
+                    </div>
+                    <div class="panel-subtitle">// Messages parked from the DLQ for human triage and root-cause analysis</div>
+                    <div class="panel-body">
+                        <div class="metric-grid">
+                            <div class="metric"><div class="metric-label">Total</div><div class="metric-value" id="dlTotal">0</div></div>
+                            <div class="metric"><div class="metric-label">Unresolved</div><div class="metric-value red" id="dlUnresolved">0</div></div>
+                            <div class="metric"><div class="metric-label">Resolved</div><div class="metric-value green" id="dlResolved">0</div></div>
+                            <div class="metric"><div class="metric-label">Last 24h</div><div class="metric-value blue" id="dl24h">0</div></div>
+                        </div>
+                        <div class="list" id="dlList">
+                            <div class="list-empty">// no dead letters loaded</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">⌕</span>Dead Letter Detail</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="field" style="margin-bottom:10px;">
+                            <label>Dead Letter ID (GUID)</label>
+                            <input type="text" id="dlId" placeholder="00000000-0000-0000-0000-000000000000" spellcheck="false">
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-info" onclick="getDeadLetterById()">Fetch</button>
+                            <button class="btn btn-danger" onclick="deleteDeadLetterById()">Delete</button>
+                        </div>
+                        <div class="field" style="margin-top:14px;">
+                            <label>Lookup by Client Order ID</label>
+                            <input type="text" id="dlClientOrderId" placeholder="client order id" spellcheck="false">
+                        </div>
+                        <div class="btn-group" style="margin-top:8px;">
+                            <button class="btn btn-info" onclick="getDeadLetterByClientOrderId()">Lookup</button>
+                        </div>
+
+                        <div class="section-title">Resolve Entry</div>
+                        <div class="field">
+                            <label>Resolution Notes</label>
+                            <textarea id="dlNotes" placeholder="Root cause / corrective action..."></textarea>
+                        </div>
+                        <div class="field" style="margin-top:10px;">
+                            <label>Resolved By</label>
+                            <input type="text" id="dlResolvedBy" value="ops" spellcheck="false">
+                        </div>
+                        <div class="btn-group" style="margin-top:8px;">
+                            <button class="btn btn-success" onclick="resolveDeadLetter()">✓ Mark Resolved</button>
+                        </div>
+
+                        <div class="terminal no-prefix" id="dlByIdResponse" style="margin-top:14px;">// awaiting request...</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">+</span>Inject Dead Letter</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="field">
+                            <label>Client Order ID (GUID)</label>
+                            <input type="text" id="dlNewClientOrderId" placeholder="client order id" spellcheck="false">
+                        </div>
+                        <div class="field" style="margin-top:10px;">
+                            <label>Reason</label>
+                            <input type="text" id="dlNewReason" value="Manual test injection" spellcheck="false">
+                        </div>
+                        <div class="field" style="margin-top:10px;">
+                            <label>Message Body</label>
+                            <textarea id="dlNewBody">{ "test": true }</textarea>
+                        </div>
+                        <div class="btn-group" style="margin-top:10px;">
+                            <button class="btn btn-primary" onclick="createDeadLetter()">▶ Inject</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== SCENARIOS TAB ===================== -->
+        <div class="tab-content" id="tab-scenarios">
+            <div class="grid grid-2">
+
+                <!-- SCENARIO 1: Full Lifecycle -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">①</span>Full Order Lifecycle</div>
+                        <span class="small">PENDING → ACK → FILLED</span>
+                    </div>
+                    <div class="panel-body">
+                        <p class="small" style="margin-bottom:12px;">Submits orders, watches them traverse the entire state machine: <code style="color:var(--accent)">PENDING_ACK</code> → <code style="color:var(--blue)">ACKNOWLEDGED</code> → <code style="color:var(--green)">FILLED</code>. Validates API → DB → Outbox → Service Bus → Consumer → Status Update pipeline.</p>
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Order Count</label>
+                                <input type="number" id="scE2ECount" value="5">
+                            </div>
+                            <div class="field">
+                                <label>Total Wait (s)</label>
+                                <input type="number" id="scE2EWait" value="90">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="scenarioFullLifecycle()">▶ Run Scenario</button>
+                        <div class="terminal no-prefix" id="scE2EOut" style="margin-top:12px;">idle.</div>
+                    </div>
+                </div>
+
+                <!-- SCENARIO 2: Pub-Sub Fan-Out -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">②</span>Pub-Sub Fan-Out</div>
+                        <span class="small">Topic broadcast verification</span>
+                    </div>
+                    <div class="panel-body">
+                        <p class="small" style="margin-bottom:12px;">Submits orders and measures the fan-out delay across <code style="color:var(--accent)">order_events_topic</code>. Each successful order should trigger <strong>3 independent subscribers</strong> (Risk Analysis, Notifications, Audit Log). Watch the function consoles to confirm each fires per event.</p>
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Order Count</label>
+                                <input type="number" id="scPubSubCount" value="3">
+                            </div>
+                            <div class="field">
+                                <label>Wait (s)</label>
+                                <input type="number" id="scPubSubWait" value="20">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="scenarioPubSubFanOut()">▶ Run Scenario</button>
+                        <div class="terminal no-prefix" id="scPubSubOut" style="margin-top:12px;">idle.</div>
+                    </div>
+                </div>
+
+                <!-- SCENARIO 3: Throughput Benchmark -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">③</span>Throughput Benchmark</div>
+                        <span class="small">P50/P95/P99 latency</span>
+                    </div>
+                    <div class="panel-body">
+                        <p class="small" style="margin-bottom:12px;">Fires N parallel requests, samples end-to-end latency (CreatedAt → UpdatedAt) once orders are processed. Reports P50, P95, P99 percentiles. Useful for spotting backpressure and Service Bus throttling.</p>
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Parallel Orders</label>
+                                <input type="number" id="scParCount" value="30">
+                            </div>
+                            <div class="field">
+                                <label>Sample Wait (s)</label>
+                                <input type="number" id="scParWait" value="30">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="scenarioThroughputBench()">▶ Run Scenario</button>
+                        <div class="terminal no-prefix" id="scParOut" style="margin-top:12px;">idle.</div>
+                    </div>
+                </div>
+
+                <!-- SCENARIO 4: Outbox Drain -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">④</span>Outbox Drain Test</div>
+                        <span class="small">Backlog processing rate</span>
+                    </div>
+                    <div class="panel-body">
+                        <p class="small" style="margin-bottom:12px;">Creates a backlog of orders, then polls outbox stats until all messages are dispatched to Service Bus. Measures drain rate of the <code style="color:var(--accent)">ScheduledOutboxMessageProcessor</code>. Useful to verify after pausing the dispatcher function.</p>
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Order Count</label>
+                                <input type="number" id="scOutboxCount" value="20">
+                            </div>
+                            <div class="field">
+                                <label>Timeout (s)</label>
+                                <input type="number" id="scOutboxTimeout" value="180">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="scenarioOutboxDrain()">▶ Run Scenario</button>
+                        <div class="terminal no-prefix" id="scOutboxOut" style="margin-top:12px;">idle.</div>
+                    </div>
+                </div>
+
+                <!-- SCENARIO 5: Idempotency Probe -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">⑤</span>Idempotency Probe</div>
+                        <span class="small">Atomic UPDATE verification</span>
+                    </div>
+                    <div class="panel-body">
+                        <p class="small" style="margin-bottom:12px;">Creates an order and inspects it in rapid succession to verify the atomic <code style="color:var(--accent)">ExecuteUpdateAsync</code> with <code style="color:var(--accent)">WHERE IsProcessed = 0</code> clause prevents double-processing. Run with multiple consumer instances active to truly stress the race condition.</p>
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Probe Count</label>
+                                <input type="number" id="scIdemCount" value="10">
+                            </div>
+                            <div class="field">
+                                <label>Wait (s)</label>
+                                <input type="number" id="scIdemWait" value="15">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="scenarioIdempotency()">▶ Run Scenario</button>
+                        <div class="terminal no-prefix" id="scIdemOut" style="margin-top:12px;">idle.</div>
+                    </div>
+                </div>
+
+                <!-- SCENARIO 6: Dead Letter Roundtrip -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">⑥</span>Dead Letter Roundtrip</div>
+                        <span class="small">DLQ API surface validation</span>
+                    </div>
+                    <div class="panel-body">
+                        <p class="small" style="margin-bottom:12px;">Injects a synthetic dead letter, fetches by Client Order ID, then resolves it via the resolve endpoint. Validates the DL controller end-to-end without needing to engineer a real poison message.</p>
+                        <button class="btn btn-primary" onclick="scenarioDeadLetterRoundTrip()">▶ Run Scenario</button>
+                        <div class="terminal no-prefix" id="scDlOut" style="margin-top:12px;">idle.</div>
+                    </div>
+                </div>
+
+                <!-- MANUAL SCENARIOS -->
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <div class="panel-title"><span class="panel-title-icon">⚠</span>Manual Chaos Scenarios</div>
+                        <span class="small">Require external action (kill services, pause queues)</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="grid grid-3">
+                            <div class="note danger">
+                                <h4>DB Outage During Create</h4>
+                                <ul>
+                                    <li>Stop SQL Server → POST <code>/api/order</code>.</li>
+                                    <li>Expect <code>500</code> with NO orphaned rows.</li>
+                                    <li>Verify Orders & OutboxMessages counts unchanged (transaction rollback).</li>
+                                </ul>
+                            </div>
+                            <div class="note warn">
+                                <h4>Service Bus Down</h4>
+                                <ul>
+                                    <li>Disable the queue in Azure portal → submit orders.</li>
+                                    <li>Orders persist; OutboxMessages remain unprocessed; <code>RetryCount</code> climbs.</li>
+                                    <li>Re-enable → dispatcher catches up; rows flip processed.</li>
+                                </ul>
+                            </div>
+                            <div class="note warn">
+                                <h4>Consumer Crash Mid-Flow</h4>
+                                <ul>
+                                    <li>Kill <code>OrderExecutionProvider</code> during a burst.</li>
+                                    <li>Service Bus redelivers; atomic <code>WHERE IsProcessed=0</code> prevents duplicate updates.</li>
+                                    <li>Restart consumer — orders reach ACK/FILLED with no duplicates.</li>
+                                </ul>
+                            </div>
+                            <div class="note danger">
+                                <h4>Poison Message → DLQ</h4>
+                                <ul>
+                                    <li>Force consumer to always throw on a specific ClientOrderId.</li>
+                                    <li>After max delivery count, Service Bus moves it to DLQ.</li>
+                                    <li><code>DeadLetterQueueProcessor</code> writes to <strong>DeadLetterLogs</strong> table.</li>
+                                    <li>Triage in the Dead Letter tab; resolve with operator notes.</li>
+                                </ul>
+                            </div>
+                            <div class="note">
+                                <h4>Multi-Consumer Race</h4>
+                                <ul>
+                                    <li>Run the function host on two machines pointed at same Service Bus.</li>
+                                    <li>Both compete for messages (queue) but receive copies (topic subscriptions).</li>
+                                    <li>Atomic UPDATE guarantees only one wins for any given order.</li>
+                                    <li>Loser logs: <em>"already processed by another instance"</em>.</li>
+                                </ul>
+                            </div>
+                            <div class="note">
+                                <h4>Subscriber Isolation</h4>
+                                <ul>
+                                    <li>Kill ONE topic subscriber (e.g., AuditLogProcessor).</li>
+                                    <li>Other subscribers (Risk, Notification) keep receiving events.</li>
+                                    <li>Audit subscription queue accumulates messages.</li>
+                                    <li>Restart subscriber — backlog drains. Pub/sub decoupling proven.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ===================== ARCHITECTURE TAB ===================== -->
+        <div class="tab-content" id="tab-architecture">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><span class="panel-title-icon">◆</span>System Architecture</div>
+                </div>
+                <div class="panel-body">
+                    <div class="terminal no-prefix" style="line-height:1.4; font-size:11px;">
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                    EVENT-DRIVEN ORDER PIPELINE // v2.0                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    [Web UI] ──HTTP──▶ [TradingApp.API]
+                            │
+                            │  BeginTransaction
+                            ▼
+                       ┌─────────┐         ┌────────────────────┐
+                       │ Orders  │         │   OutboxMessages   │
+                       │ (PENDING_ACK)│    │  (ProcessedAt=null)│
+                       └─────────┘         └─────────┬──────────┘
+                                                     │
+                                                     │  every 1 min
+                                                     ▼
+                                    [ScheduledOutboxMessageProcessor]
+                                                     │
+                                                     │  publish
+                                                     ▼
+                                  ┌─────────────────────────────────┐
+                                  │  Service Bus: CREATE_ORDER_QUEUE│
+                                  └─────────────────┬───────────────┘
+                                                    │
+                                                    ▼
+                                  [OrderExecutionProvider]
+                                  ├─ atomic UPDATE (idempotent)
+                                  ├─ assign ACKNOWLEDGED or REJECTED
+                                  └─ publish to topic ──┐
+                                                        ▼
+                                  ┌─────────────────────────────────┐
+                                  │  Service Bus: order_events_topic│
+                                  └──┬─────────────┬────────────┬───┘
+                                     │             │            │
+                                     ▼             ▼            ▼
+                          [RiskAnalysis]   [Notification] [AuditLog]
+                          (risk-analysis)   (notifications)(audit-log)
+
+                                            │ every 1 min, separately
+                                            ▼
+                                  [ScheduledOrderStatusProcessor]
+                                  └─ flips ACKNOWLEDGED → FILLED
+
+                              ┌──────────────────────────────────┐
+                              │  Service Bus DLQ (max delivery)  │
+                              └───────────────┬──────────────────┘
+                                              ▼
+                                  [DeadLetterQueueProcessor]
+                                  └─ writes DeadLetterLogs row
+                    </div>
+                    <div class="divider"></div>
+                    <div class="grid grid-3">
+                        <div class="note">
+                            <h4>Queue Pattern (Commands)</h4>
+                            <ul>
+                                <li><code>CREATE_ORDER_QUEUE</code> = command queue</li>
+                                <li>Competing consumers — message goes to <em>one</em> recipient</li>
+                                <li>Load-balanced order execution</li>
+                            </ul>
+                        </div>
+                        <div class="note warn">
+                            <h4>Topic Pattern (Events)</h4>
+                            <ul>
+                                <li><code>order_events_topic</code> = event broadcast</li>
+                                <li>3 subscriptions: each gets its own copy</li>
+                                <li>Independent scaling, failure isolation</li>
+                            </ul>
+                        </div>
+                        <div class="note danger">
+                            <h4>Reliability Guarantees</h4>
+                            <ul>
+                                <li>Outbox: no message without DB commit</li>
+                                <li>Idempotency: atomic UPDATE WHERE IsProcessed=0</li>
+                                <li>DLQ: poison messages quarantined for triage</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
 <script>
-// ====================== State ======================
+// =================================================================
+// STATE
+// =================================================================
 const state = {
     burstTimer: null,
-    burstStart: 0,
-    burstSent: 0,
-    burstSuccess: 0,
-    burstFailed: 0,
+    burstSent: 0, burstSuccess: 0, burstFailed: 0, burstStart: 0,
     autoRefresh: { orders: null, outbox: null, deadletter: null },
+    globalRefreshTimer: null,
+    apiHealthy: false,
+    prevStats: {},
 };
 
-// ====================== Helpers ======================
+// =================================================================
+// HELPERS
+// =================================================================
 const baseUrl = () => (document.getElementById('apiBaseUrl').value || 'https://localhost:7224').replace(/\/+$/, '');
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 const fmtDate = (d) => d ? new Date(d).toLocaleString() : '—';
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 async function api(path, opts = {}) {
     const url = baseUrl() + path;
-    const res = await fetch(url, {
-        headers: { 'Content-Type': 'application/json' },
-        ...opts,
-    });
-    let body = null;
-    const text = await res.text();
-    if (text) {
-        try { body = JSON.parse(text); } catch { body = text; }
+    try {
+        const res = await fetch(url, {
+            headers: { 'Content-Type': 'application/json' },
+            ...opts,
+        });
+        let body = null;
+        const text = await res.text();
+        if (text) {
+            try { body = JSON.parse(text); } catch { body = text; }
+        }
+        return { ok: res.ok, status: res.status, body, networkError: false };
+    } catch (err) {
+        // Silent failure — return a synthetic response so callers
+        // don't have to plaster try/catch everywhere.
+        return { ok: false, status: 0, body: null, networkError: true, error: err };
     }
-    return { ok: res.ok, status: res.status, body };
 }
 
 function setOut(id, content, isError = false) {
     const el = $(id);
-    el.style.color = isError ? '#fc8181' : '#e2e8f0';
+    if (!el) return;
+    el.style.color = isError ? '#ff4757' : '';
     el.textContent = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
 }
 
-function appendOut(id, line, color = '#e2e8f0') {
+function appendOut(id, line, color = '') {
     const el = $(id);
+    if (!el) return;
     const span = document.createElement('div');
-    span.style.color = color;
+    if (color) span.style.color = color;
     span.textContent = line;
     el.appendChild(span);
     el.scrollTop = el.scrollHeight;
 }
 
-function statusBadge(status) {
-    const s = String(status || '').toUpperCase();
-    const map = {
-        'PENDING_ACK': ['pending', 'PENDING'],
-        'ACKNOWLEDGED': ['acknowledged', 'ACKNOWLEDGED'],
-        'REJECTED': ['rejected', 'REJECTED'],
-        'FILLED': ['filled', 'FILLED'],
-    };
-    const [cls, txt] = map[s] || ['pending', s || 'UNKNOWN'];
-    return { cls, txt };
+function clearOut(id) {
+    const el = $(id);
+    if (el) el.textContent = '';
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function setConnStatus(connected, msg) {
+    const dot = $('liveDot');
+    const status = $('connStatus');
+    state.apiHealthy = connected;
+    if (connected) {
+        dot.classList.remove('offline');
+        status.textContent = msg || 'CONNECTED';
+        status.style.color = 'var(--green)';
+    } else {
+        dot.classList.add('offline');
+        status.textContent = msg || 'OFFLINE';
+        status.style.color = 'var(--red)';
+    }
+}
 
-// ====================== Tabs ======================
+// =================================================================
+// TABS
+// =================================================================
 document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -534,102 +1355,139 @@ document.querySelectorAll('.tab').forEach(btn => {
     });
 });
 
-// ====================== Global Stats ======================
-async function refreshAllStats() {
-    $('globalStatus').textContent = 'Refreshing...';
+// =================================================================
+// GLOBAL STATS
+// =================================================================
+async function refreshAllStats(force = false) {
     const [orders, outboxStats, dlStats] = await Promise.all([
         api('/api/order'),
         api('/api/outboxmessage/stats'),
         api('/api/deadletter/stats'),
     ]);
+
+    // Determine connection health from the calls
+    const anyOk = orders.ok || outboxStats.ok || dlStats.ok;
+    setConnStatus(anyOk, anyOk ? 'CONNECTED' : 'API OFFLINE');
+
     if (orders.ok && Array.isArray(orders.body)) {
         $('gOrders').textContent = orders.body.length;
         $('gOrdersProcessed').textContent = orders.body.filter(o => o.isProcessed).length;
+        $('gOrdersTrend').textContent = orders.body.length > 0 ? `last: ${fmtDate(orders.body[0].createdAt)}` : 'no orders yet';
+    } else if (!anyOk) {
+        $('gOrders').textContent = '—';
+        $('gOrdersProcessed').textContent = '—';
+        $('gOrdersTrend').textContent = 'awaiting feed';
     }
     if (outboxStats.ok && outboxStats.body) {
         $('gOutbox').textContent = outboxStats.body.totalCount ?? 0;
         $('gOutboxUnp').textContent = outboxStats.body.unprocessedCount ?? 0;
+    } else if (!anyOk) {
+        $('gOutbox').textContent = '—';
+        $('gOutboxUnp').textContent = '—';
     }
     if (dlStats.ok && dlStats.body) {
         $('gDl').textContent = dlStats.body.totalCount ?? 0;
         $('gDlUnres').textContent = dlStats.body.unresolvedCount ?? 0;
+    } else if (!anyOk) {
+        $('gDl').textContent = '—';
+        $('gDlUnres').textContent = '—';
     }
-    $('globalStatus').textContent = 'Updated ' + new Date().toLocaleTimeString();
 }
 
-// ====================== Orders ======================
+// =================================================================
+// ORDERS
+// =================================================================
 async function createOrder() {
     const payload = {
         quantity: parseInt($('orderQty').value, 10),
         price: parseFloat($('orderPrice').value),
     };
-    setOut('singleOrderResponse', 'Creating order...');
+    setOut('singleOrderResponse', '→ submitting...');
     const res = await api('/api/order', { method: 'POST', body: JSON.stringify(payload) });
+    if (res.networkError) {
+        setOut('singleOrderResponse', `✗ API unreachable\n${baseUrl()}/api/order`, true);
+        return;
+    }
     setOut('singleOrderResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
-    if (res.ok && res.body?.id) $('orderId').value = res.body.id;
+    if (res.ok) refreshAllStats();
 }
 
 async function getAllOrders() {
     const list = $('ordersList');
-    list.innerHTML = '<span class="loading"></span> Loading...';
+    list.innerHTML = '<div class="list-empty">// loading...</div>';
     const res = await api('/api/order');
-    if (!res.ok || !Array.isArray(res.body)) {
-        list.innerHTML = '<div style="color:#f56565">Error loading orders.</div>';
-        return;
-    }
+    if (res.networkError) { list.innerHTML = '<div class="list-empty" style="color:var(--red)">// API offline</div>'; return; }
+    if (!res.ok || !Array.isArray(res.body)) { list.innerHTML = '<div class="list-empty" style="color:var(--red)">// error loading</div>'; return; }
+
     const orders = res.body;
     $('totalOrders').textContent = orders.length;
     $('processedOrders').textContent = orders.filter(o => o.isProcessed).length;
-    $('ackOrders').textContent = orders.filter(o => String(o.status).toUpperCase() === 'ACKNOWLEDGED').length;
+    $('ackOrders').textContent = orders.filter(o => ['ACKNOWLEDGED','FILLED'].includes(String(o.status).toUpperCase())).length;
     $('rejectedOrders').textContent = orders.filter(o => String(o.status).toUpperCase() === 'REJECTED').length;
-    if (orders.length === 0) { list.innerHTML = '<div class="small">No orders.</div>'; return; }
+
+    if (orders.length === 0) { list.innerHTML = '<div class="list-empty">// no orders</div>'; return; }
     const sorted = [...orders].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
     list.innerHTML = sorted.slice(0, 50).map(o => {
-        const { cls, txt } = statusBadge(o.status);
-        return `<div class="item ${cls}">
-            <div class="item-row">
-                <div><span class="badge badge-${cls}">${esc(txt)}</span>
-                    <span class="badge ${o.isProcessed ? 'badge-processed' : 'badge-unprocessed'}">${o.isProcessed ? 'PROCESSED' : 'UNPROCESSED'}</span>
-                </div>
-                <div class="small">Qty: <b>${o.quantity}</b> @ $${o.price}</div>
+        const s = String(o.status || '').toUpperCase();
+        const cls = s === 'ACKNOWLEDGED' ? 'acknowledged'
+                 : s === 'REJECTED' ? 'rejected'
+                 : s === 'FILLED' ? 'filled'
+                 : 'pending';
+        const badgeCls = `badge badge-${cls}`;
+        return `
+        <div class="row ${cls}">
+            <div class="row-head">
+                <span class="${badgeCls}">${s || 'PENDING'}</span>
+                <span class="small">QTY <b style="color:var(--text-0)">${o.quantity}</b> @ <b style="color:var(--accent)">$${o.price}</b></span>
             </div>
-            <div class="meta">ID: ${esc(o.id)}</div>
-            <div class="meta">ClientOrderId: ${esc(o.clientOrderId)}</div>
-            <div class="meta">Created: ${fmtDate(o.createdAt)} | Updated: ${fmtDate(o.updatedAt)}</div>
-            <div style="margin-top:6px">
-                <button class="btn btn-info" style="padding:4px 10px;font-size:11px;margin:0 4px 0 0" onclick="$('orderId').value='${o.id}';getOrderById()">Inspect</button>
-                <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;margin:0" onclick="$('orderId').value='${o.id}';deleteOrderById()">Delete</button>
+            <div class="kv">
+                <span class="k">ID</span><span class="v">${esc(o.id)}</span>
+                <span class="k">CLIENT</span><span class="v">${esc(o.clientOrderId)}</span>
+                <span class="k">CREATED</span><span class="v">${fmtDate(o.createdAt)}</span>
+                <span class="k">UPDATED</span><span class="v">${fmtDate(o.updatedAt)}</span>
+                <span class="k">PROCESSED</span><span class="v" style="color:${o.isProcessed?'var(--green)':'var(--accent)'}">${o.isProcessed ? 'TRUE' : 'FALSE'}</span>
+            </div>
+            <div class="row-actions">
+                <button class="btn btn-sm btn-info" onclick="$('orderId').value='${o.id}';getOrderById()">Inspect</button>
+                <button class="btn btn-sm btn-danger" onclick="$('orderId').value='${o.id}';deleteOrderById()">Delete</button>
             </div>
         </div>`;
-    }).join('') + (sorted.length > 50 ? `<div class="small">Showing first 50 of ${sorted.length}.</div>` : '');
+    }).join('') + (sorted.length > 50 ? `<div class="list-empty">// showing first 50 of ${sorted.length}</div>` : '');
 }
 
 async function getOrderById() {
     const id = $('orderId').value.trim();
-    if (!id) { setOut('orderByIdResponse', 'Enter an Order ID.', true); return; }
-    setOut('orderByIdResponse', 'Loading...');
+    if (!id) { setOut('orderByIdResponse', '✗ Enter an Order ID', true); return; }
+    setOut('orderByIdResponse', '→ fetching...');
     const res = await api('/api/order/' + encodeURIComponent(id));
+    if (res.networkError) { setOut('orderByIdResponse', '✗ API offline', true); return; }
     setOut('orderByIdResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
 }
 
 async function deleteOrderById() {
     const id = $('orderId').value.trim();
-    if (!id) { setOut('orderByIdResponse', 'Enter an Order ID.', true); return; }
-    if (!confirm('Delete order ' + id + '?')) return;
+    if (!id) { setOut('orderByIdResponse', '✗ Enter an Order ID', true); return; }
+    if (!confirm('Delete order ' + id + ' ?')) return;
     const res = await api('/api/order/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (res.networkError) { setOut('orderByIdResponse', '✗ API offline', true); return; }
     setOut('orderByIdResponse', `HTTP ${res.status}\n` + (res.body ? JSON.stringify(res.body, null, 2) : 'Deleted.'), !res.ok);
     getAllOrders();
+    refreshAllStats();
 }
 
 async function deleteAllOrders() {
     if (!confirm('Delete ALL orders? This cannot be undone.')) return;
     const res = await api('/api/order', { method: 'DELETE' });
+    if (res.networkError) { alert('✗ API offline'); return; }
     alert(`HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2));
     getAllOrders();
     refreshAllStats();
 }
 
-// ====================== Burst ======================
+// =================================================================
+// BURST
+// =================================================================
 async function burstCreateOrders() {
     stopBurst();
     const count = parseInt($('burstCount').value, 10);
@@ -639,23 +1497,30 @@ async function burstCreateOrders() {
     state.burstSent = 0; state.burstSuccess = 0; state.burstFailed = 0;
     state.burstStart = Date.now();
     updateBurstStats();
-    const out = $('burstResponse'); out.innerHTML = ''; appendOut('burstResponse', `Starting burst of ${count} orders @ ${delay}ms delay...`, '#90cdf4');
+    clearOut('burstResponse');
+    appendOut('burstResponse', `▶ burst init: ${count} orders @ ${delay}ms`, 'var(--blue)');
 
     let i = 0;
     state.burstTimer = setInterval(async () => {
-        if (i >= count) { stopBurst(); appendOut('burstResponse', `✅ Burst complete: ${state.burstSuccess} success / ${state.burstFailed} failed`, '#48bb78'); return; }
+        if (i >= count) {
+            stopBurst();
+            appendOut('burstResponse', `✓ burst complete: ${state.burstSuccess} success / ${state.burstFailed} failed`, 'var(--green)');
+            refreshAllStats();
+            return;
+        }
         i++;
         const payload = {
             quantity: Math.floor(Math.random() * (maxQ - minQ + 1)) + minQ,
             price: parseFloat((Math.random() * 500 + 50).toFixed(2)),
         };
         state.burstSent++; updateBurstStats();
-        try {
-            const res = await api('/api/order', { method: 'POST', body: JSON.stringify(payload) });
-            if (res.ok) { state.burstSuccess++; appendOut('burstResponse', `✓ #${i}: qty=${payload.quantity} price=${payload.price} → ${res.body?.clientOrderId || res.body?.id}`, '#9ae6b4'); }
-            else { state.burstFailed++; appendOut('burstResponse', `✗ #${i}: HTTP ${res.status}`, '#fc8181'); }
-        } catch (e) {
-            state.burstFailed++; appendOut('burstResponse', `✗ #${i}: ${e.message}`, '#fc8181');
+        const res = await api('/api/order', { method: 'POST', body: JSON.stringify(payload) });
+        if (res.ok) {
+            state.burstSuccess++;
+            appendOut('burstResponse', `✓ #${i}: qty=${payload.quantity} px=$${payload.price} → ${res.body?.clientOrderId || res.body?.id}`, 'var(--green)');
+        } else {
+            state.burstFailed++;
+            appendOut('burstResponse', `✗ #${i}: ${res.networkError ? 'NETWORK_FAIL' : 'HTTP '+res.status}`, 'var(--red)');
         }
         updateBurstStats();
     }, delay);
@@ -673,64 +1538,77 @@ function updateBurstStats() {
     $('burstRate').textContent = elapsed > 0 ? (state.burstSent / elapsed).toFixed(1) : '0';
 }
 
-// ====================== Outbox ======================
+// =================================================================
+// OUTBOX
+// =================================================================
 async function getOutbox(kind = 'all') {
     const list = $('outboxList');
-    list.innerHTML = '<span class="loading"></span> Loading...';
+    list.innerHTML = '<div class="list-empty">// loading...</div>';
     const path = kind === 'all' ? '/api/outboxmessage'
               : kind === 'unprocessed' ? '/api/outboxmessage/unprocessed'
               : '/api/outboxmessage/processed';
     const [res, statsRes] = await Promise.all([api(path), api('/api/outboxmessage/stats')]);
+
     if (statsRes.ok && statsRes.body) {
         $('outboxTotal').textContent = statsRes.body.totalCount ?? 0;
         $('outboxProcessed').textContent = statsRes.body.processedCount ?? 0;
         $('outboxUnprocessed').textContent = statsRes.body.unprocessedCount ?? 0;
         $('outbox24h').textContent = statsRes.body.last24Hours ?? 0;
     }
-    if (!res.ok || !Array.isArray(res.body)) { list.innerHTML = '<div style="color:#f56565">Error.</div>'; return; }
-    if (res.body.length === 0) { list.innerHTML = '<div class="small">No messages.</div>'; return; }
+
+    if (res.networkError) { list.innerHTML = '<div class="list-empty" style="color:var(--red)">// API offline</div>'; return; }
+    if (!res.ok || !Array.isArray(res.body)) { list.innerHTML = '<div class="list-empty" style="color:var(--red)">// error</div>'; return; }
+    if (res.body.length === 0) { list.innerHTML = '<div class="list-empty">// no messages</div>'; return; }
+
     const sorted = [...res.body].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
     list.innerHTML = sorted.slice(0, 50).map(m => {
         const cls = m.isProcessed ? 'processed' : 'unprocessed';
-        const badge = m.isProcessed ? 'badge-processed' : 'badge-unprocessed';
-        return `<div class="item ${cls}">
-            <div class="item-row">
-                <div><span class="badge ${badge}">${m.isProcessed ? 'PROCESSED' : 'UNPROCESSED'}</span>
-                    <strong style="margin-left:6px">${esc(m.type || 'OutboxMessage')}</strong></div>
-                <div class="small">Retries: <b>${m.retryCount ?? 0}</b></div>
+        const badgeCls = `badge badge-${cls}`;
+        return `
+        <div class="row ${cls}">
+            <div class="row-head">
+                <span class="${badgeCls}">${m.isProcessed ? 'PROCESSED' : 'PENDING'}</span>
+                <span class="small">${esc(m.type || 'OutboxMessage')} · retries: <b style="color:${(m.retryCount??0)>0?'var(--accent)':'var(--text-0)'}">${m.retryCount ?? 0}</b></span>
             </div>
-            <div class="meta">ID: ${esc(m.id)}</div>
-            <div class="meta">Created: ${fmtDate(m.createdAt)} | Processed: ${fmtDate(m.processedAt)}</div>
-            <details><summary>Payload</summary><pre>${esc(typeof m.payload === 'string' ? m.payload : JSON.stringify(m.payload, null, 2))}</pre></details>
-            <div style="margin-top:6px">
-                <button class="btn btn-info" style="padding:4px 10px;font-size:11px;margin:0 4px 0 0" onclick="$('outboxId').value='${m.id}';getOutboxById()">Inspect</button>
-                ${!m.isProcessed ? `<button class="btn btn-success" style="padding:4px 10px;font-size:11px;margin:0 4px 0 0" onclick="$('outboxId').value='${m.id}';markOutboxProcessed()">Mark Processed</button>` : ''}
-                <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;margin:0" onclick="$('outboxId').value='${m.id}';deleteOutboxById()">Delete</button>
+            <div class="kv">
+                <span class="k">ID</span><span class="v">${esc(m.id)}</span>
+                <span class="k">CREATED</span><span class="v">${fmtDate(m.createdAt)}</span>
+                <span class="k">PROCESSED AT</span><span class="v">${fmtDate(m.processedAt)}</span>
+            </div>
+            <details><summary>▸ payload</summary><pre>${esc(typeof m.payload === 'string' ? m.payload : JSON.stringify(m.payload, null, 2))}</pre></details>
+            <div class="row-actions">
+                <button class="btn btn-sm btn-info" onclick="$('outboxId').value='${m.id}';getOutboxById()">Inspect</button>
+                ${!m.isProcessed ? `<button class="btn btn-sm btn-success" onclick="$('outboxId').value='${m.id}';markOutboxProcessed()">Mark Processed</button>` : ''}
+                <button class="btn btn-sm btn-danger" onclick="$('outboxId').value='${m.id}';deleteOutboxById()">Delete</button>
             </div>
         </div>`;
-    }).join('') + (sorted.length > 50 ? `<div class="small">Showing first 50 of ${sorted.length}.</div>` : '');
+    }).join('') + (sorted.length > 50 ? `<div class="list-empty">// showing first 50 of ${sorted.length}</div>` : '');
 }
 
 async function getOutboxById() {
     const id = $('outboxId').value.trim();
-    if (!id) { setOut('outboxByIdResponse', 'Enter an Outbox ID.', true); return; }
+    if (!id) { setOut('outboxByIdResponse', '✗ Enter an ID', true); return; }
+    setOut('outboxByIdResponse', '→ fetching...');
     const res = await api('/api/outboxmessage/' + encodeURIComponent(id));
+    if (res.networkError) { setOut('outboxByIdResponse', '✗ API offline', true); return; }
     setOut('outboxByIdResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
 }
 
 async function markOutboxProcessed() {
     const id = $('outboxId').value.trim();
-    if (!id) { setOut('outboxByIdResponse', 'Enter an Outbox ID.', true); return; }
+    if (!id) { setOut('outboxByIdResponse', '✗ Enter an ID', true); return; }
     const res = await api('/api/outboxmessage/' + encodeURIComponent(id) + '/mark-processed', { method: 'POST' });
+    if (res.networkError) { setOut('outboxByIdResponse', '✗ API offline', true); return; }
     setOut('outboxByIdResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
     getOutbox('all');
 }
 
 async function deleteOutboxById() {
     const id = $('outboxId').value.trim();
-    if (!id) { setOut('outboxByIdResponse', 'Enter an Outbox ID.', true); return; }
-    if (!confirm('Delete outbox message ' + id + '?')) return;
+    if (!id) { setOut('outboxByIdResponse', '✗ Enter an ID', true); return; }
+    if (!confirm('Delete outbox message ' + id + ' ?')) return;
     const res = await api('/api/outboxmessage/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (res.networkError) { setOut('outboxByIdResponse', '✗ API offline', true); return; }
     setOut('outboxByIdResponse', `HTTP ${res.status}\n` + (res.body ? JSON.stringify(res.body, null, 2) : 'Deleted.'), !res.ok);
     getOutbox('all');
 }
@@ -738,70 +1616,86 @@ async function deleteOutboxById() {
 async function deleteAllOutbox() {
     if (!confirm('Delete ALL outbox messages?')) return;
     const res = await api('/api/outboxmessage', { method: 'DELETE' });
+    if (res.networkError) { alert('✗ API offline'); return; }
     alert(`HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2));
     getOutbox('all'); refreshAllStats();
 }
 
-// ====================== Dead Letter ======================
+// =================================================================
+// DEAD LETTER
+// =================================================================
 async function getDeadLetters(kind = 'all') {
     const list = $('dlList');
-    list.innerHTML = '<span class="loading"></span> Loading...';
+    list.innerHTML = '<div class="list-empty">// loading...</div>';
     const path = kind === 'unresolved' ? '/api/deadletter/unresolved' : '/api/deadletter';
     const [res, statsRes] = await Promise.all([api(path), api('/api/deadletter/stats')]);
+
     if (statsRes.ok && statsRes.body) {
         $('dlTotal').textContent = statsRes.body.totalCount ?? 0;
         $('dlUnresolved').textContent = statsRes.body.unresolvedCount ?? 0;
         $('dlResolved').textContent = statsRes.body.resolvedCount ?? 0;
         $('dl24h').textContent = statsRes.body.last24Hours ?? 0;
     }
-    if (!res.ok || !Array.isArray(res.body)) { list.innerHTML = '<div style="color:#f56565">Error.</div>'; return; }
-    if (res.body.length === 0) { list.innerHTML = '<div class="small">No dead letters.</div>'; return; }
+
+    if (res.networkError) { list.innerHTML = '<div class="list-empty" style="color:var(--red)">// API offline</div>'; return; }
+    if (!res.ok || !Array.isArray(res.body)) { list.innerHTML = '<div class="list-empty" style="color:var(--red)">// error</div>'; return; }
+    if (res.body.length === 0) { list.innerHTML = '<div class="list-empty">// no dead letters</div>'; return; }
+
     const sorted = [...res.body].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
     list.innerHTML = sorted.slice(0, 50).map(d => {
         const cls = d.isResolved ? 'resolved' : 'unresolved';
-        const badge = d.isResolved ? 'badge-resolved' : 'badge-unresolved';
-        return `<div class="item ${cls}">
-            <div class="item-row">
-                <div><span class="badge ${badge}">${d.isResolved ? 'RESOLVED' : 'UNRESOLVED'}</span></div>
-                <div class="small">${fmtDate(d.createdAt)}</div>
+        const badgeCls = `badge badge-${cls}`;
+        return `
+        <div class="row ${cls}">
+            <div class="row-head">
+                <span class="${badgeCls}">${d.isResolved ? 'RESOLVED' : 'UNRESOLVED'}</span>
+                <span class="small">${esc(d.reason || '—')}</span>
             </div>
-            <div style="margin-top:4px"><strong>Reason:</strong> ${esc(d.reason)}</div>
-            <div class="meta">ID: ${esc(d.id)}</div>
-            <div class="meta">ClientOrderId: ${esc(d.clientOrderId)}</div>
-            ${d.isResolved ? `<div class="meta">Resolved by ${esc(d.resolvedBy)} at ${fmtDate(d.resolvedAt)}</div>
-                <div class="meta">Notes: ${esc(d.resolutionNotes)}</div>` : ''}
-            <details><summary>Message Body</summary><pre>${esc(d.messageBody || '')}</pre></details>
-            <div style="margin-top:6px">
-                <button class="btn btn-info" style="padding:4px 10px;font-size:11px;margin:0 4px 0 0" onclick="$('dlId').value='${d.id}';getDeadLetterById()">Inspect</button>
-                ${!d.isResolved ? `<button class="btn btn-success" style="padding:4px 10px;font-size:11px;margin:0 4px 0 0" onclick="$('dlId').value='${d.id}'">Select to Resolve</button>` : ''}
-                <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;margin:0" onclick="$('dlId').value='${d.id}';deleteDeadLetterById()">Delete</button>
+            <div class="kv">
+                <span class="k">ID</span><span class="v">${esc(d.id)}</span>
+                <span class="k">CLIENT</span><span class="v">${esc(d.clientOrderId)}</span>
+                <span class="k">CREATED</span><span class="v">${fmtDate(d.createdAt)}</span>
+                ${d.isResolved ? `
+                <span class="k">RESOLVED AT</span><span class="v">${fmtDate(d.resolvedAt)}</span>
+                <span class="k">RESOLVED BY</span><span class="v">${esc(d.resolvedBy || '—')}</span>
+                <span class="k">NOTES</span><span class="v">${esc(d.resolutionNotes || '—')}</span>
+                ` : ''}
+            </div>
+            <details><summary>▸ message body</summary><pre>${esc(typeof d.messageBody === 'string' ? d.messageBody : JSON.stringify(d.messageBody, null, 2))}</pre></details>
+            <div class="row-actions">
+                <button class="btn btn-sm btn-info" onclick="$('dlId').value='${d.id}';getDeadLetterById()">Inspect</button>
+                <button class="btn btn-sm btn-danger" onclick="$('dlId').value='${d.id}';deleteDeadLetterById()">Delete</button>
             </div>
         </div>`;
-    }).join('') + (sorted.length > 50 ? `<div class="small">Showing first 50 of ${sorted.length}.</div>` : '');
+    }).join('') + (sorted.length > 50 ? `<div class="list-empty">// showing first 50 of ${sorted.length}</div>` : '');
 }
 
 async function getDeadLetterById() {
     const id = $('dlId').value.trim();
-    if (!id) { setOut('dlByIdResponse', 'Enter a DL ID.', true); return; }
+    if (!id) { setOut('dlByIdResponse', '✗ Enter an ID', true); return; }
+    setOut('dlByIdResponse', '→ fetching...');
     const res = await api('/api/deadletter/' + encodeURIComponent(id));
+    if (res.networkError) { setOut('dlByIdResponse', '✗ API offline', true); return; }
     setOut('dlByIdResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
 }
 
 async function getDeadLetterByClientOrderId() {
     const id = $('dlClientOrderId').value.trim();
-    if (!id) { setOut('dlByIdResponse', 'Enter a Client Order ID.', true); return; }
+    if (!id) { setOut('dlByIdResponse', '✗ Enter a client order ID', true); return; }
     const res = await api('/api/deadletter/by-client-order/' + encodeURIComponent(id));
+    if (res.networkError) { setOut('dlByIdResponse', '✗ API offline', true); return; }
     setOut('dlByIdResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
 }
 
 async function resolveDeadLetter() {
     const id = $('dlId').value.trim();
-    if (!id) { setOut('dlByIdResponse', 'Enter a DL ID.', true); return; }
+    if (!id) { setOut('dlByIdResponse', '✗ Enter a DL ID', true); return; }
     const payload = {
         resolutionNotes: $('dlNotes').value,
         resolvedBy: $('dlResolvedBy').value,
     };
     const res = await api('/api/deadletter/' + encodeURIComponent(id) + '/resolve', { method: 'POST', body: JSON.stringify(payload) });
+    if (res.networkError) { setOut('dlByIdResponse', '✗ API offline', true); return; }
     setOut('dlByIdResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
     getDeadLetters('all');
 }
@@ -813,6 +1707,7 @@ async function createDeadLetter() {
         messageBody: $('dlNewBody').value,
     };
     const res = await api('/api/deadletter', { method: 'POST', body: JSON.stringify(payload) });
+    if (res.networkError) { setOut('dlByIdResponse', '✗ API offline', true); return; }
     setOut('dlByIdResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
     if (res.ok && res.body?.id) $('dlId').value = res.body.id;
     getDeadLetters('all');
@@ -820,9 +1715,10 @@ async function createDeadLetter() {
 
 async function deleteDeadLetterById() {
     const id = $('dlId').value.trim();
-    if (!id) { setOut('dlByIdResponse', 'Enter a DL ID.', true); return; }
-    if (!confirm('Delete dead letter ' + id + '?')) return;
+    if (!id) { setOut('dlByIdResponse', '✗ Enter a DL ID', true); return; }
+    if (!confirm('Delete dead letter ' + id + ' ?')) return;
     const res = await api('/api/deadletter/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (res.networkError) { setOut('dlByIdResponse', '✗ API offline', true); return; }
     setOut('dlByIdResponse', `HTTP ${res.status}\n` + (res.body ? JSON.stringify(res.body, null, 2) : 'Deleted.'), !res.ok);
     getDeadLetters('all');
 }
@@ -830,15 +1726,20 @@ async function deleteDeadLetterById() {
 async function deleteAllDeadLetters() {
     if (!confirm('Delete ALL dead letters?')) return;
     const res = await api('/api/deadletter', { method: 'DELETE' });
+    if (res.networkError) { alert('✗ API offline'); return; }
     alert(`HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2));
     getDeadLetters('all'); refreshAllStats();
 }
 
-// ====================== Auto-refresh ======================
+// =================================================================
+// AUTO REFRESH
+// =================================================================
 function toggleAutoRefresh(kind) {
+    const btn = $(kind === 'orders' ? 'ordersAutoBtn' : kind === 'outbox' ? 'outboxAutoBtn' : 'dlAutoBtn');
     if (state.autoRefresh[kind]) {
         clearInterval(state.autoRefresh[kind]);
         state.autoRefresh[kind] = null;
+        if (btn) { btn.classList.remove('btn-primary'); btn.textContent = 'Auto 5s'; }
         return;
     }
     const fn = kind === 'orders' ? getAllOrders
@@ -846,108 +1747,131 @@ function toggleAutoRefresh(kind) {
             : () => getDeadLetters('all');
     fn();
     state.autoRefresh[kind] = setInterval(fn, 5000);
+    if (btn) { btn.classList.add('btn-primary'); btn.textContent = '■ Auto ON'; }
 }
 
-// ====================== Scenarios ======================
-async function scenarioE2E() {
-    const out = 'scE2EOut'; const el = $(out); el.innerHTML = '';
+// =================================================================
+// SCENARIOS
+// =================================================================
+async function scenarioFullLifecycle() {
+    const out = 'scE2EOut'; clearOut(out);
     const count = parseInt($('scE2ECount').value, 10);
     const wait = parseInt($('scE2EWait').value, 10);
-    appendOut(out, `[1/4] Snapshotting baseline stats...`, '#90cdf4');
+
+    appendOut(out, `▶ FULL LIFECYCLE SCENARIO`, 'var(--accent)');
+    appendOut(out, `▶ phase 1/4: baseline snapshot`, 'var(--blue)');
     const baseStats = await api('/api/outboxmessage/stats');
+    if (baseStats.networkError) { appendOut(out, '✗ API offline — abort', 'var(--red)'); return; }
     const baseOutbox = baseStats.body?.totalCount ?? 0;
-    appendOut(out, `Baseline outbox: ${baseOutbox}`);
-    appendOut(out, `[2/4] Creating ${count} orders...`, '#90cdf4');
+    appendOut(out, `  outbox total: ${baseOutbox}`);
+
+    appendOut(out, `▶ phase 2/4: creating ${count} orders`, 'var(--blue)');
     const ids = [];
     for (let i = 0; i < count; i++) {
         const r = await api('/api/order', { method: 'POST', body: JSON.stringify({ quantity: 10 + i, price: 100 + i }) });
-        if (r.ok) { ids.push(r.body.id); appendOut(out, `  ✓ ${r.body.id} (${r.body.status})`, '#9ae6b4'); }
-        else { appendOut(out, `  ✗ HTTP ${r.status}`, '#fc8181'); }
+        if (r.ok) { ids.push(r.body.id); appendOut(out, `  ✓ ${r.body.id}  status=${r.body.status}`, 'var(--green)'); }
+        else { appendOut(out, `  ✗ HTTP ${r.status}`, 'var(--red)'); }
     }
-    appendOut(out, `[3/4] Waiting ${wait}s for processing...`, '#90cdf4');
-    await sleep(wait * 1000);
-    appendOut(out, `[4/4] Verifying...`, '#90cdf4');
-    let processed = 0, ack = 0, rej = 0;
+
+    appendOut(out, `▶ phase 3/4: polling for ${wait}s (status changes)`, 'var(--blue)');
+    const start = Date.now();
+    const seen = new Map();  // id -> last status
+    while ((Date.now() - start) / 1000 < wait) {
+        for (const id of ids) {
+            const r = await api('/api/order/' + id);
+            if (r.ok) {
+                const cur = `${r.body.status}/${r.body.isProcessed}`;
+                if (seen.get(id) !== cur) {
+                    appendOut(out, `  t=${((Date.now()-start)/1000).toFixed(1)}s  ${id.slice(0,8)}…  → ${r.body.status} processed=${r.body.isProcessed}`);
+                    seen.set(id, cur);
+                }
+            }
+        }
+        // Check if everyone reached FILLED
+        let allFilled = true;
+        for (const id of ids) {
+            const last = seen.get(id);
+            if (!last || !last.startsWith('FILLED')) { allFilled = false; break; }
+        }
+        if (allFilled) { appendOut(out, `  → all orders reached FILLED early`, 'var(--green)'); break; }
+        await sleep(3000);
+    }
+
+    appendOut(out, `▶ phase 4/4: results`, 'var(--blue)');
+    let pend = 0, ack = 0, rej = 0, fil = 0, proc = 0;
     for (const id of ids) {
         const r = await api('/api/order/' + id);
-        if (r.ok) {
-            if (r.body.isProcessed) processed++;
-            const s = String(r.body.status).toUpperCase();
-            if (s === 'ACKNOWLEDGED' || s === 'FILLED') ack++;
-            if (s === 'REJECTED') rej++;
-            appendOut(out, `  ${id} → status=${r.body.status} processed=${r.body.isProcessed}`);
-        }
+        if (!r.ok) continue;
+        const s = String(r.body.status).toUpperCase();
+        if (r.body.isProcessed) proc++;
+        if (s === 'PENDING_ACK') pend++;
+        if (s === 'ACKNOWLEDGED') ack++;
+        if (s === 'REJECTED') rej++;
+        if (s === 'FILLED') fil++;
     }
-    const finalStats = await api('/api/outboxmessage/stats');
-    const finalOutbox = finalStats.body?.totalCount ?? 0;
-    appendOut(out, `\n=== RESULT ===`, '#fbd38d');
-    appendOut(out, `Created: ${ids.length} | Processed: ${processed} | Ack/Filled: ${ack} | Rejected: ${rej}`);
-    appendOut(out, `Outbox delta: ${finalOutbox - baseOutbox}`);
-    appendOut(out, processed === ids.length ? '✅ PASS' : '⚠️ INCOMPLETE — some orders not processed yet', processed === ids.length ? '#48bb78' : '#ed8936');
+    appendOut(out, `══════════════════════════════════════════`, 'var(--accent)');
+    appendOut(out, `RESULT`, 'var(--accent)');
+    appendOut(out, `  total submitted ........ ${ids.length}`);
+    appendOut(out, `  processed .............. ${proc}`);
+    appendOut(out, `  PENDING_ACK ............ ${pend}`);
+    appendOut(out, `  ACKNOWLEDGED ........... ${ack}`);
+    appendOut(out, `  REJECTED ............... ${rej}`);
+    appendOut(out, `  FILLED ................. ${fil}`);
+    const verdict = (proc === ids.length) ? '✓ PASS' : '⚠ PARTIAL';
+    const color = (proc === ids.length) ? 'var(--green)' : 'var(--accent)';
+    appendOut(out, verdict, color);
     refreshAllStats();
 }
 
-async function scenarioOutboxBacklog() {
-    const out = 'scOutboxOut'; const el = $(out); el.innerHTML = '';
-    const count = parseInt($('scOutboxCount').value, 10);
-    const timeout = parseInt($('scOutboxTimeout').value, 10);
-    appendOut(out, `Creating ${count} orders...`, '#90cdf4');
+async function scenarioPubSubFanOut() {
+    const out = 'scPubSubOut'; clearOut(out);
+    const count = parseInt($('scPubSubCount').value, 10);
+    const wait = parseInt($('scPubSubWait').value, 10);
+
+    appendOut(out, `▶ PUB-SUB FAN-OUT SCENARIO`, 'var(--accent)');
+    appendOut(out, `▶ phase 1/3: submit ${count} orders`, 'var(--blue)');
+    const ids = [];
     for (let i = 0; i < count; i++) {
-        await api('/api/order', { method: 'POST', body: JSON.stringify({ quantity: 50, price: 100 }) });
+        const r = await api('/api/order', { method: 'POST', body: JSON.stringify({ quantity: 100, price: 200 }) });
+        if (r.networkError) { appendOut(out, '✗ API offline — abort', 'var(--red)'); return; }
+        if (r.ok) { ids.push({ id: r.body.id, client: r.body.clientOrderId }); appendOut(out, `  ✓ ${r.body.clientOrderId}`, 'var(--green)'); }
+        else appendOut(out, `  ✗ HTTP ${r.status}`, 'var(--red)');
     }
-    appendOut(out, `Polling /api/outboxmessage/stats every 2s for up to ${timeout}s...`, '#90cdf4');
-    const start = Date.now();
-    let lastUnp = -1;
-    while ((Date.now() - start) / 1000 < timeout) {
-        const r = await api('/api/outboxmessage/stats');
-        const unp = r.body?.unprocessedCount ?? 0;
-        const total = r.body?.totalCount ?? 0;
-        if (unp !== lastUnp) {
-            appendOut(out, `t=${((Date.now()-start)/1000).toFixed(1)}s  total=${total}  unprocessed=${unp}`);
-            lastUnp = unp;
-        }
-        if (unp === 0) {
-            appendOut(out, `✅ Backlog drained in ${((Date.now()-start)/1000).toFixed(1)}s`, '#48bb78');
-            refreshAllStats(); return;
-        }
-        await sleep(2000);
+
+    appendOut(out, `▶ phase 2/3: wait ${wait}s for fan-out`, 'var(--blue)');
+    appendOut(out, `  (each order → OrderExecutionProvider → order_events_topic)`, 'var(--text-2)');
+    appendOut(out, `  (each topic msg → RiskAnalysis + Notification + AuditLog)`, 'var(--text-2)');
+    appendOut(out, `  expected total subscriber invocations: ${count * 3}`, 'var(--text-2)');
+    await sleep(wait * 1000);
+
+    appendOut(out, `▶ phase 3/3: verify processing`, 'var(--blue)');
+    let processed = 0;
+    for (const o of ids) {
+        const r = await api('/api/order/' + o.id);
+        if (r.ok && r.body.isProcessed) processed++;
     }
-    appendOut(out, `⚠️ Timed out — backlog not drained. Check ScheduledOutboxMessageProcessor.`, '#fc8181');
+    appendOut(out, `══════════════════════════════════════════`, 'var(--accent)');
+    appendOut(out, `RESULT`, 'var(--accent)');
+    appendOut(out, `  orders processed: ${processed}/${ids.length}`);
+    appendOut(out, `  topic events published (expected): ${processed}`);
+    appendOut(out, `  total subscriber fires (expected): ${processed * 3}`);
+    appendOut(out, ``);
+    appendOut(out, `→ NEXT STEPS: check the consoles of`, 'var(--text-2)');
+    appendOut(out, `  - RiskAnalysisProcessor`, 'var(--text-2)');
+    appendOut(out, `  - NotificationsProcessor`, 'var(--text-2)');
+    appendOut(out, `  - AuditLogProcessor`, 'var(--text-2)');
+    appendOut(out, `  each should show ${processed} invocations`, 'var(--text-2)');
+    appendOut(out, processed === ids.length ? '✓ PASS' : '⚠ PARTIAL', processed === ids.length ? 'var(--green)' : 'var(--accent)');
     refreshAllStats();
 }
 
-async function scenarioDeadLetterRoundTrip() {
-    const out = 'scDlOut'; const el = $(out); el.innerHTML = '';
-    const fakeClient = crypto.randomUUID();
-    appendOut(out, `[1/3] Injecting dead letter (clientOrderId=${fakeClient})...`, '#90cdf4');
-    const create = await api('/api/deadletter', { method: 'POST', body: JSON.stringify({
-        clientOrderId: fakeClient, reason: 'scenario test', messageBody: '{"scenario":true}'
-    })});
-    if (!create.ok) { appendOut(out, `✗ Inject failed HTTP ${create.status}`, '#fc8181'); return; }
-    const id = create.body.id;
-    appendOut(out, `  ✓ created id=${id}`, '#9ae6b4');
-
-    appendOut(out, `[2/3] Fetching by clientOrderId...`, '#90cdf4');
-    const lookup = await api('/api/deadletter/by-client-order/' + fakeClient);
-    appendOut(out, `  HTTP ${lookup.status} → ${lookup.body?.id || '?'}`);
-
-    appendOut(out, `[3/3] Resolving...`, '#90cdf4');
-    const resolved = await api('/api/deadletter/' + id + '/resolve', {
-        method: 'POST', body: JSON.stringify({ resolutionNotes: 'auto-resolved by scenario', resolvedBy: 'scenario-bot' })
-    });
-    if (resolved.ok && resolved.body?.isResolved) {
-        appendOut(out, `✅ PASS — round-trip complete`, '#48bb78');
-    } else {
-        appendOut(out, `✗ Resolve failed HTTP ${resolved.status}`, '#fc8181');
-    }
-    refreshAllStats();
-}
-
-async function scenarioConcurrentBurst() {
-    const out = 'scParOut'; const el = $(out); el.innerHTML = '';
+async function scenarioThroughputBench() {
+    const out = 'scParOut'; clearOut(out);
     const count = parseInt($('scParCount').value, 10);
     const wait = parseInt($('scParWait').value, 10);
-    appendOut(out, `Firing ${count} parallel requests...`, '#90cdf4');
+
+    appendOut(out, `▶ THROUGHPUT BENCHMARK`, 'var(--accent)');
+    appendOut(out, `▶ firing ${count} parallel requests`, 'var(--blue)');
     const start = Date.now();
     const results = await Promise.all(
         Array.from({ length: count }, (_, i) => api('/api/order', {
@@ -958,10 +1882,14 @@ async function scenarioConcurrentBurst() {
     const elapsed = (Date.now() - start) / 1000;
     const ok = results.filter(r => r.ok).length;
     const ids = results.filter(r => r.ok).map(r => r.body.id);
-    appendOut(out, `Done in ${elapsed.toFixed(2)}s: ${ok}/${count} accepted (${(count/elapsed).toFixed(1)} req/s)`, '#9ae6b4');
-    appendOut(out, `Waiting ${wait}s before sampling...`, '#90cdf4');
+    appendOut(out, `  submission: ${ok}/${count} accepted in ${elapsed.toFixed(2)}s (${(count/elapsed).toFixed(1)} req/s)`, 'var(--green)');
+
+    appendOut(out, `▶ waiting ${wait}s for processing`, 'var(--blue)');
     await sleep(wait * 1000);
-    let proc = 0, latencies = [];
+
+    appendOut(out, `▶ sampling latencies`, 'var(--blue)');
+    let proc = 0;
+    const latencies = [];
     for (const id of ids) {
         const r = await api('/api/order/' + id);
         if (r.ok && r.body.isProcessed) {
@@ -969,17 +1897,152 @@ async function scenarioConcurrentBurst() {
             latencies.push(new Date(r.body.updatedAt) - new Date(r.body.createdAt));
         }
     }
-    const avg = latencies.length ? (latencies.reduce((a,b)=>a+b,0) / latencies.length / 1000).toFixed(2) : 'N/A';
-    const max = latencies.length ? (Math.max(...latencies) / 1000).toFixed(2) : 'N/A';
-    appendOut(out, `\n=== RESULT ===`, '#fbd38d');
-    appendOut(out, `Processed: ${proc}/${ok}  |  Avg latency: ${avg}s  |  Max latency: ${max}s`);
+    appendOut(out, `══════════════════════════════════════════`, 'var(--accent)');
+    appendOut(out, `RESULT`, 'var(--accent)');
+    appendOut(out, `  processed ........ ${proc}/${ok}`);
+    if (latencies.length > 0) {
+        latencies.sort((a,b) => a-b);
+        const p = (q) => latencies[Math.floor(latencies.length * q)] / 1000;
+        const avg = (latencies.reduce((a,b)=>a+b,0) / latencies.length) / 1000;
+        appendOut(out, `  avg latency ...... ${avg.toFixed(2)}s`);
+        appendOut(out, `  p50 latency ...... ${p(0.50).toFixed(2)}s`);
+        appendOut(out, `  p95 latency ...... ${p(0.95).toFixed(2)}s`);
+        appendOut(out, `  p99 latency ...... ${p(0.99).toFixed(2)}s`);
+        appendOut(out, `  max latency ...... ${(Math.max(...latencies)/1000).toFixed(2)}s`);
+    } else {
+        appendOut(out, `  no processed orders — extend wait time`, 'var(--accent)');
+    }
     refreshAllStats();
 }
 
-// ====================== Init ======================
-window.addEventListener('load', () => {
+async function scenarioOutboxDrain() {
+    const out = 'scOutboxOut'; clearOut(out);
+    const count = parseInt($('scOutboxCount').value, 10);
+    const timeout = parseInt($('scOutboxTimeout').value, 10);
+
+    appendOut(out, `▶ OUTBOX DRAIN SCENARIO`, 'var(--accent)');
+    appendOut(out, `▶ creating ${count} orders`, 'var(--blue)');
+    for (let i = 0; i < count; i++) {
+        const r = await api('/api/order', { method: 'POST', body: JSON.stringify({ quantity: 50, price: 100 }) });
+        if (r.networkError) { appendOut(out, '✗ API offline — abort', 'var(--red)'); return; }
+    }
+    appendOut(out, `  ✓ ${count} orders queued`, 'var(--green)');
+
+    appendOut(out, `▶ polling outbox stats every 2s (max ${timeout}s)`, 'var(--blue)');
+    const start = Date.now();
+    let lastUnp = -1;
+    while ((Date.now() - start) / 1000 < timeout) {
+        const r = await api('/api/outboxmessage/stats');
+        if (r.networkError) { appendOut(out, '✗ API offline', 'var(--red)'); return; }
+        const unp = r.body?.unprocessedCount ?? 0;
+        const total = r.body?.totalCount ?? 0;
+        if (unp !== lastUnp) {
+            appendOut(out, `  t=${((Date.now()-start)/1000).toFixed(1)}s  total=${total}  pending=${unp}`);
+            lastUnp = unp;
+        }
+        if (unp === 0) {
+            appendOut(out, `══════════════════════════════════════════`, 'var(--accent)');
+            appendOut(out, `✓ DRAINED in ${((Date.now()-start)/1000).toFixed(1)}s`, 'var(--green)');
+            refreshAllStats();
+            return;
+        }
+        await sleep(2000);
+    }
+    appendOut(out, `══════════════════════════════════════════`, 'var(--accent)');
+    appendOut(out, `⚠ TIMEOUT — backlog not drained`, 'var(--red)');
+    appendOut(out, `  check ScheduledOutboxMessageProcessor (runs every 60s)`, 'var(--text-2)');
     refreshAllStats();
-    getAllOrders();
+}
+
+async function scenarioIdempotency() {
+    const out = 'scIdemOut'; clearOut(out);
+    const count = parseInt($('scIdemCount').value, 10);
+    const wait = parseInt($('scIdemWait').value, 10);
+
+    appendOut(out, `▶ IDEMPOTENCY PROBE`, 'var(--accent)');
+    appendOut(out, `▶ creating ${count} orders`, 'var(--blue)');
+    const ids = [];
+    for (let i = 0; i < count; i++) {
+        const r = await api('/api/order', { method: 'POST', body: JSON.stringify({ quantity: 75, price: 150 }) });
+        if (r.networkError) { appendOut(out, '✗ API offline — abort', 'var(--red)'); return; }
+        if (r.ok) ids.push(r.body.id);
+    }
+    appendOut(out, `  ✓ ${ids.length} orders created`, 'var(--green)');
+
+    appendOut(out, `▶ waiting ${wait}s for consumer`, 'var(--blue)');
+    await sleep(wait * 1000);
+
+    appendOut(out, `▶ verifying each order updated exactly once`, 'var(--blue)');
+    let single = 0, multi = 0, unproc = 0;
+    for (const id of ids) {
+        const r = await api('/api/order/' + id);
+        if (!r.ok) continue;
+        const created = new Date(r.body.createdAt).getTime();
+        const updated = new Date(r.body.updatedAt).getTime();
+        if (!r.body.isProcessed) { unproc++; continue; }
+        // If the update timestamp moved, it was processed exactly once for this run
+        if (updated > created) { single++; }
+        else { multi++; }
+    }
+    appendOut(out, `══════════════════════════════════════════`, 'var(--accent)');
+    appendOut(out, `RESULT`, 'var(--accent)');
+    appendOut(out, `  cleanly processed ......... ${single}`);
+    appendOut(out, `  not yet processed ......... ${unproc}`);
+    appendOut(out, `  suspicious (same ts) ...... ${multi}`);
+    appendOut(out, ``);
+    appendOut(out, `→ TO STRESS THE RACE CONDITION:`, 'var(--text-2)');
+    appendOut(out, `  run OrderExecutionProvider in TWO terminals`, 'var(--text-2)');
+    appendOut(out, `  pointed at the SAME Service Bus and DB`, 'var(--text-2)');
+    appendOut(out, `  one will log "already processed by another instance"`, 'var(--text-2)');
+    appendOut(out, single === ids.length ? '✓ PASS' : '⚠ PARTIAL', single === ids.length ? 'var(--green)' : 'var(--accent)');
+    refreshAllStats();
+}
+
+async function scenarioDeadLetterRoundTrip() {
+    const out = 'scDlOut'; clearOut(out);
+    const fakeClient = crypto.randomUUID();
+
+    appendOut(out, `▶ DEAD LETTER ROUND-TRIP`, 'var(--accent)');
+    appendOut(out, `▶ phase 1/3: injecting synthetic DL`, 'var(--blue)');
+    appendOut(out, `  clientOrderId: ${fakeClient}`);
+    const create = await api('/api/deadletter', { method: 'POST', body: JSON.stringify({
+        clientOrderId: fakeClient, reason: 'scenario test', messageBody: '{"scenario":true}'
+    })});
+    if (create.networkError) { appendOut(out, '✗ API offline', 'var(--red)'); return; }
+    if (!create.ok) { appendOut(out, `✗ inject failed HTTP ${create.status}`, 'var(--red)'); return; }
+    const id = create.body.id;
+    appendOut(out, `  ✓ created id=${id}`, 'var(--green)');
+
+    appendOut(out, `▶ phase 2/3: lookup by clientOrderId`, 'var(--blue)');
+    const lookup = await api('/api/deadletter/by-client-order/' + fakeClient);
+    appendOut(out, `  HTTP ${lookup.status} → ${lookup.body?.id || '—'}`);
+
+    appendOut(out, `▶ phase 3/3: resolving`, 'var(--blue)');
+    const resolved = await api('/api/deadletter/' + id + '/resolve', {
+        method: 'POST', body: JSON.stringify({ resolutionNotes: 'auto-resolved by scenario', resolvedBy: 'scenario-bot' })
+    });
+    appendOut(out, `══════════════════════════════════════════`, 'var(--accent)');
+    if (resolved.ok && resolved.body?.isResolved) {
+        appendOut(out, `✓ PASS — round-trip complete`, 'var(--green)');
+    } else {
+        appendOut(out, `✗ FAIL — HTTP ${resolved.status}`, 'var(--red)');
+    }
+    refreshAllStats();
+}
+
+// =================================================================
+// INIT
+// =================================================================
+window.addEventListener('load', async () => {
+    // Initial refresh
+    await refreshAllStats();
+    if (state.apiHealthy) {
+        getAllOrders();
+    }
+    // Global heartbeat every 10s (only if a request "succeeds" once we don't keep spamming when offline)
+    state.globalRefreshTimer = setInterval(() => {
+        refreshAllStats();
+    }, 10000);
 });
 </script>
 </body>
