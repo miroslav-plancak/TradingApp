@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\TradingApp.Domain\TradingApp.Domain.csproj" />
+    <ProjectReference Include="..\..\TradingApp.Events\TradingApp.Events.csproj" />
   </ItemGroup>
 	
 </Project>

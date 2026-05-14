@@ -5,6 +5,7 @@ using System.Text.Json;
 using TradingApp.Business.Interfaces.Services;
 using TradingApp.Domain;
 using TradingApp.Domain.Models.Enums;
+using TradingApp.Events.Payloads;
 
 namespace DeadLetterQueueProcessor
 {
@@ -117,10 +118,5 @@ namespace DeadLetterQueueProcessor
 
             await Task.CompletedTask;
         }
-    }
-
-    public class OrderPayload
-    {
-        public Guid ClientOrderId { get; set; }
     }
 }

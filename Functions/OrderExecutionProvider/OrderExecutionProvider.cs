@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TradingApp.Domain;
 using TradingApp.Domain.Models.Enums;
+using TradingApp.Events.Events;
+using TradingApp.Events.Payloads;
 
 namespace OrderExecutionProvider
 {
@@ -102,17 +104,5 @@ namespace OrderExecutionProvider
                   clientOrderId);
             }
         }
-    }
-
-    internal class OrderPayload
-    {
-        public Guid ClientOrderId { get; set; }
-    }
-
-    internal class OrderProcessedEvent
-    {
-        public Guid ClientOrderId { get; set; }
-        public required string Status { get; set; }
-        public DateTimeOffset ProcessedAt { get; set; }
     }
 }

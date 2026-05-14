@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationProcessor", "Fu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuditLogProcessor", "Functions\AuditLogProcessor\AuditLogProcessor.csproj", "{5A50419A-2838-4D10-8E0C-DB9DC9DECB71}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradingApp.Events", "TradingApp.Events\TradingApp.Events.csproj", "{B736E5D8-EF2F-4CBD-BCFB-D02F933E9F1B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -76,6 +78,10 @@ Global
 		{5A50419A-2838-4D10-8E0C-DB9DC9DECB71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A50419A-2838-4D10-8E0C-DB9DC9DECB71}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A50419A-2838-4D10-8E0C-DB9DC9DECB71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B736E5D8-EF2F-4CBD-BCFB-D02F933E9F1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B736E5D8-EF2F-4CBD-BCFB-D02F933E9F1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B736E5D8-EF2F-4CBD-BCFB-D02F933E9F1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B736E5D8-EF2F-4CBD-BCFB-D02F933E9F1B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
