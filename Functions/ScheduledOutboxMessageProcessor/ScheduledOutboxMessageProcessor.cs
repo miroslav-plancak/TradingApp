@@ -16,11 +16,11 @@ namespace ScheduledOutboxMessageProcessor
         private readonly ServiceBusSender _sender;
 
         public ScheduledOutboxMessageProcessor
-            (
+        (
             ILoggerFactory loggerFactory, 
             TradingDbContext tradingDbContext,
             IConfiguration configuration
-            )
+        )
         {
             _logger = loggerFactory.CreateLogger<ScheduledOutboxMessageProcessor>();
             _tradingDbContext = tradingDbContext;

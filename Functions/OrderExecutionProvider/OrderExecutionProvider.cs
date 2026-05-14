@@ -16,11 +16,12 @@ namespace OrderExecutionProvider
         private readonly TradingDbContext _tradingDbContext;
         private readonly ServiceBusClient _serviceBusClient;
 
-        public OrderExecutionProvider(
+        public OrderExecutionProvider
+        (
             ILogger<OrderExecutionProvider> logger,
             TradingDbContext tradingDbContext,
             ServiceBusClient serviceBusClient
-            )
+        )
         {
             _logger = logger;
             _tradingDbContext = tradingDbContext;
@@ -28,7 +29,8 @@ namespace OrderExecutionProvider
         }
 
         [Function("OrderExecutionProvider")]
-        public async Task Run(
+        public async Task Run
+        (
             [ServiceBusTrigger(
             queueName:"CREATE_ORDER_QUEUE",
             Connection = "ServiceBusConnection")]
@@ -75,7 +77,7 @@ namespace OrderExecutionProvider
         {
             try
             {
-                var sender = _serviceBusClient.CreateSender("ORDER_EVENTS_TOPIC");
+                var sender = _serviceBusClient.CreateSender("order_events_topic");
 
                 var eventPayload = new OrderProcessedEvent
                 {
