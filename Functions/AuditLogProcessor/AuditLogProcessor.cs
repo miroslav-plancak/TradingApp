@@ -18,15 +18,13 @@ namespace AuditLogProcessor
         [Function(nameof(AuditLogProcessor))]
         public async Task Run(
             [ServiceBusTrigger(
-            "ORDER_EVENTS_TOPIC", 
+            "order_events_topic", 
             "audit-log", 
             Connection = "ServiceBusConnection")]
             ServiceBusReceivedMessage message
         )
         {
             _logger.LogInformation("AuditLogProcessor triggered.");
-
-            await Task.Delay(300);
 
             var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body);
 

@@ -18,7 +18,7 @@ namespace RiskAnalysisProcessor
         [Function(nameof(RiskAnalysisProcessor))]
         public async Task Run(
             [ServiceBusTrigger(
-            "ORDER_EVENTS_TOPIC",
+            "order_events_topic",
             "risk-analysis", 
             Connection = "ServiceBusConnection")]
             ServiceBusReceivedMessage message

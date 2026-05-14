@@ -6,27 +6,25 @@ using TradingApp.Events.Events;
 
 namespace NotificationProcessor
 {
-    public class NotificationProcessor
+    public class NotificationsProcessor
     {
-        private readonly ILogger<NotificationProcessor> _logger;
+        private readonly ILogger<NotificationsProcessor> _logger;
 
-        public NotificationProcessor(ILogger<NotificationProcessor> logger)
+        public NotificationsProcessor(ILogger<NotificationsProcessor> logger)
         {
             _logger = logger;
         }
 
-        [Function(nameof(NotificationProcessor))]
+        [Function(nameof(NotificationsProcessor))]
         public async Task Run(
             [ServiceBusTrigger(
-            "ORDER_EVENTS_TOPIC",
-           "notification",
-            Connection = "ServiceBusConection")]
+            "order_events_topic",
+           "notifications",
+            Connection = "ServiceBusConnection")]
             ServiceBusReceivedMessage message
         )
         {
-            _logger.LogInformation("NotificationProcessor triggered.");
-      
-            await Task.Delay(300);
+            _logger.LogInformation("NotificationsProcessor triggered.");
       
             var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body);
 

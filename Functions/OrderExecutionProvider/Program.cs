@@ -28,7 +28,7 @@ builder.Services.AddDbContext<TradingDbContext>(options =>
 builder.Services.AddSingleton(sp =>
     {
         var connectionString = Environment.GetEnvironmentVariable("ServiceBusConnection");
-        return new ServiceBusClient(connectionString, new DefaultAzureCredential());
+        return new ServiceBusClient(connectionString);
     });
 
 builder.Build().Run();
