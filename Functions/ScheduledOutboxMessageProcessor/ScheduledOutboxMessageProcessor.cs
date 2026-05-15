@@ -34,17 +34,17 @@ namespace ScheduledOutboxMessageProcessor
         {
             _logger.LogInformation("ScheduledOutboxMessageProcessor tiggered at: {triggerTime}.", DateTimeOffset.UtcNow);
 
-            var messages = await _tradingDbContext.OutboxMessages
+            var outboxMessages = await _tradingDbContext.OutboxMessages
                 .Where(x => x.ProcessedAt == null && x.RetryCount < 5)
                 .OrderBy(x => x.CreatedAt)
                 .Take(50)
                 .ToListAsync();
 
-            foreach(var message in messages)
+            foreach(var outboxMessage in outboxMessages)
             {
                 try
                 {
-                    if(Guid.TryParse(message.Payload, out var clientOrderId))
+                    if(Guid.TryParse(outboxMessage.Payload, out var clientOrderId))
                     {
                         var isProcessedAlready = await _tradingDbContext.Orders
                             .Where(x => x.ClientOrderId == clientOrderId)
@@ -53,30 +53,34 @@ namespace ScheduledOutboxMessageProcessor
 
                         if (isProcessedAlready)
                         {
-                            message.ProcessedAt = DateTimeOffset.UtcNow;
+                            outboxMessage.ProcessedAt = DateTimeOffset.UtcNow;
                             continue;
                         }
                         else 
                         {
                             await NotifyServiceBusCreateOrderQueue(clientOrderId);
-                            message.ProcessedAt = DateTimeOffset.UtcNow;
+
+                            //throw new Exception("ScheduledOutboxMessageProcessor is offline.");
+
+                            outboxMessage.ProcessedAt = DateTimeOffset.UtcNow;
                         }
 
                     }
                     else
                     {
-                        _logger.LogError("Invalid guid payload: {Payload} ", message.Payload);
-                        message.RetryCount++;
+                        _logger.LogError("Invalid guid payload: {Payload} ", outboxMessage.Payload);
+                        outboxMessage.RetryCount++;
                     }
 
                 }
                 catch (Exception ex) 
                 {
-                    _logger.LogError(ex, "Failed to Process outbox message {Id}", message.Id);
-                    message.RetryCount++;
+                    _logger.LogError(ex, "Failed to Process outbox message {Id}", outboxMessage.Id);
+                    outboxMessage.RetryCount++;
                 }
             }
 
+            //throw new Exception("ScheduledOutboxMessageProcessor's database is offline/unreachable.");
             await _tradingDbContext.SaveChangesAsync();
         }
 
@@ -84,6 +88,8 @@ namespace ScheduledOutboxMessageProcessor
         {
             var payload = new { ClientOrderId = clientOrderId };
             var json = JsonSerializer.Serialize(payload);
+
+            //throw new Exception("ServiceBusQueue is offline/unreachable.");
 
             await _sender.SendMessageAsync(new ServiceBusMessage(json));
         }

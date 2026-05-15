@@ -55,14 +55,14 @@ namespace OrderExecutionProvider
             var random = new Random();
             var randomStatus = random.Next(2) == 0 ? OrderStatus.ACKNOWLEDGED : OrderStatus.REJECTED;
 
-            var orderRowsAffected = await _tradingDbContext.Orders
+            var orderRowsProcessed = await _tradingDbContext.Orders
                 .Where(x => x.ClientOrderId == payload.ClientOrderId && !x.IsProcessed)
                 .ExecuteUpdateAsync(x => x
                 .SetProperty(x => x.Status, randomStatus)
                 .SetProperty(x => x.IsProcessed, true)
                 .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow));
 
-            if(orderRowsAffected == 0)
+            if(orderRowsProcessed == 0)
             {
                 _logger.LogInformation("Order already processed by another instance: {Id}", payload.ClientOrderId);
                 return;
