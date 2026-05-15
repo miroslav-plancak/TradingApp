@@ -123,7 +123,6 @@ namespace ScheduledOutboxMessageProcessor
                 }
             }
 
-            
             // PHASE 3: Auto-recovery — Service Bus is back online,
             //          resurrect transient-failure quarantined messages
             if (isServiceBusHealthy)

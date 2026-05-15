@@ -423,3 +423,5 @@ __blobstorage__/
 AzuriteConfig
 
 /.github
+/CLAUDE.md
+/.claude

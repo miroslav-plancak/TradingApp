@@ -89,7 +89,7 @@ namespace OrderExecutionProvider
                 var messageBody = JsonSerializer.Serialize(eventPayload);
                 var message = new ServiceBusMessage(messageBody)
                 {
-                    ContentType = "aplication/json",
+                    ContentType = "application/json",
                     Subject = "OrderProcessed"
                 };
 
