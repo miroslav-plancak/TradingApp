@@ -8,8 +8,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-0: #0a140b;
+        /* =====================================================
+           THEME SYSTEM — 5 themes selectable from top-right
+           To change the DEFAULT theme: edit the `DEFAULT_THEME`
+           constant in the <script> section near the bottom.
+           Themes: terminal | bloomberg | arctic | solar | ledger
+           ===================================================== */
+        :root,
+        [data-theme="terminal"] {
+            /* Theme 1: TERMINAL — original deep dark navy/amber (default) */
+            --bg-0: #0a0e14;
             --bg-1: #11161e;
             --bg-2: #161c26;
             --bg-3: #1f2733;
@@ -27,7 +35,107 @@
             --red-dim: #b8323e;
             --blue: #4fb3ff;
             --blue-dim: #2a78b8;
-            --purple: #b794f6;
+            --grid-line: rgba(255,255,255,0.015);
+            --ambient-1: rgba(255, 176, 32, 0.04);
+            --ambient-2: rgba(79, 179, 255, 0.03);
+        }
+        [data-theme="bloomberg"] {
+            /* Theme 2: BLOOMBERG — classic dark with orange terminal glow */
+            --bg-0: #1a1a1a;
+            --bg-1: #232323;
+            --bg-2: #2a2a2a;
+            --bg-3: #333333;
+            --border: #3d3d3d;
+            --border-bright: #555555;
+            --text-0: #f5f5f5;
+            --text-1: #c8c8c8;
+            --text-2: #888888;
+            --text-3: #555555;
+            --accent: #ff8000;
+            --accent-dim: #b85a00;
+            --green: #00ff66;
+            --green-dim: #009939;
+            --red: #ff3333;
+            --red-dim: #b82020;
+            --blue: #66b3ff;
+            --blue-dim: #3380cc;
+            --grid-line: rgba(255,128,0,0.02);
+            --ambient-1: rgba(255, 128, 0, 0.05);
+            --ambient-2: rgba(255, 51, 51, 0.02);
+        }
+        [data-theme="arctic"] {
+            /* Theme 3: ARCTIC — bright, cool, light theme */
+            --bg-0: #f5f7fa;
+            --bg-1: #ffffff;
+            --bg-2: #eef1f5;
+            --bg-3: #dfe4ec;
+            --border: #d0d7e0;
+            --border-bright: #a8b3c2;
+            --text-0: #1a2332;
+            --text-1: #3d4a5c;
+            --text-2: #6b7a91;
+            --text-3: #9fb1c7;
+            --accent: #0066cc;
+            --accent-dim: #004999;
+            --green: #00875a;
+            --green-dim: #006644;
+            --red: #de350b;
+            --red-dim: #a82800;
+            --blue: #0052cc;
+            --blue-dim: #003d99;
+            --grid-line: rgba(0,0,0,0.03);
+            --ambient-1: rgba(0, 102, 204, 0.04);
+            --ambient-2: rgba(0, 135, 90, 0.03);
+        }
+        [data-theme="solar"] {
+            /* Theme 4: SOLAR — warm cream/sepia, soft & comfortable */
+            --bg-0: #faf6ed;
+            --bg-1: #fdfaf2;
+            --bg-2: #f2ebd9;
+            --bg-3: #e8dec5;
+            --border: #d4c8a8;
+            --border-bright: #a89a78;
+            --text-0: #2d2416;
+            --text-1: #5c4e35;
+            --text-2: #8a7a5c;
+            --text-3: #b8a785;
+            --accent: #b8541a;
+            --accent-dim: #8a3d12;
+            --green: #5c8a2f;
+            --green-dim: #426620;
+            --red: #b8351a;
+            --red-dim: #8a2412;
+            --blue: #2a6b8a;
+            --blue-dim: #1a4d66;
+            --grid-line: rgba(120,80,30,0.03);
+            --ambient-1: rgba(184, 84, 26, 0.05);
+            --ambient-2: rgba(92, 138, 47, 0.03);
+        }
+        [data-theme="ledger"] {
+            /* Theme 5: LEDGER — paper-white, accountant ledger style */
+            --bg-0: #ffffff;
+            --bg-1: #fafafa;
+            --bg-2: #f0f0f0;
+            --bg-3: #e0e0e0;
+            --border: #c8c8c8;
+            --border-bright: #888888;
+            --text-0: #0a0a0a;
+            --text-1: #333333;
+            --text-2: #666666;
+            --text-3: #999999;
+            --accent: #c2185b;
+            --accent-dim: #8a0e3f;
+            --green: #2e7d32;
+            --green-dim: #1b5e20;
+            --red: #c62828;
+            --red-dim: #8a1a1a;
+            --blue: #1565c0;
+            --blue-dim: #0d47a1;
+            --grid-line: rgba(0,0,0,0.025);
+            --ambient-1: rgba(194, 24, 91, 0.03);
+            --ambient-2: rgba(46, 125, 50, 0.02);
+        }
+        :root {
             --mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
             --display: 'Bebas Neue', 'Impact', sans-serif;
             --sans: 'Inter', -apple-system, sans-serif;
@@ -47,21 +155,26 @@
             position: fixed;
             inset: 0;
             background:
-                radial-gradient(ellipse at top left, rgba(255, 176, 32, 0.04) 0%, transparent 50%),
-                radial-gradient(ellipse at bottom right, rgba(79, 179, 255, 0.03) 0%, transparent 50%);
+                radial-gradient(ellipse at top left, var(--ambient-1) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, var(--ambient-2) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
+            transition: background 0.3s;
         }
         body::after {
             content: '';
             position: fixed;
             inset: 0;
             background-image:
-                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
             background-size: 40px 40px;
             pointer-events: none;
             z-index: 0;
+        }
+        html, body, .panel, .terminal, .btn, .field input, .field textarea, .field select,
+        .tab, .badge, .row, .metric, .ticker-cell, .endpoint-bar {
+            transition: background-color 0.25s, border-color 0.25s, color 0.25s;
         }
         .app { position: relative; z-index: 1; }
 
@@ -244,12 +357,6 @@
             height: 2px;
             background: var(--accent);
         }
-        .tab-num {
-            color: var(--text-3);
-            margin-right: 8px;
-            font-weight: 400;
-        }
-        .tab.active .tab-num { color: var(--accent-dim); }
 
         /* ================= MAIN ================= */
         .main {
@@ -414,7 +521,7 @@
 
         /* ================= TERMINAL OUTPUT ================= */
         .terminal {
-            background: #050810;
+            background: var(--bg-0);
             border: 1px solid var(--border);
             padding: 12px 14px;
             font-family: var(--mono);
@@ -427,6 +534,10 @@
             white-space: pre-wrap;
             word-break: break-word;
             position: relative;
+        }
+        [data-theme="terminal"] .terminal,
+        [data-theme="bloomberg"] .terminal {
+            background: #050810;
         }
         .terminal::before {
             content: '$ ';
@@ -637,6 +748,120 @@
             .ticker-cell { border-right: none; border-bottom: 1px solid var(--border); }
             .form-row { grid-template-columns: 1fr; }
         }
+
+        /* ================= THEME SELECTOR ================= */
+        .theme-selector {
+            position: relative;
+            font-family: var(--mono);
+        }
+        .theme-trigger {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            color: var(--text-1);
+            padding: 6px 10px;
+            font-family: var(--mono);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s;
+        }
+        .theme-trigger:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .theme-swatch {
+            width: 12px; height: 12px;
+            background: var(--accent);
+            border: 1px solid var(--border-bright);
+        }
+        .theme-menu {
+            position: absolute;
+            top: calc(100% + 4px);
+            right: 0;
+            background: var(--bg-1);
+            border: 1px solid var(--border-bright);
+            min-width: 200px;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        .theme-menu.open { display: block; }
+        .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--text-1);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+            transition: background 0.1s;
+        }
+        .theme-option:last-child { border-bottom: none; }
+        .theme-option:hover { background: var(--bg-2); color: var(--text-0); }
+        .theme-option.active { color: var(--accent); }
+        .theme-option .swatches {
+            display: flex;
+            gap: 2px;
+        }
+        .theme-option .swatch {
+            width: 10px; height: 18px;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+        .theme-option .label-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        .theme-option .label-sub {
+            font-size: 9px;
+            color: var(--text-3);
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 400;
+        }
+
+        /* ================= PURGE ZONE ================= */
+        .purge-zone {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+        }
+        .purge-summary {
+            display: flex;
+            gap: 12px;
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        .purge-summary span b {
+            color: var(--text-0);
+            font-weight: 700;
+            margin-left: 4px;
+        }
+        .purge-summary span.has-data b { color: var(--accent); }
+        .btn-purge {
+            background: transparent;
+            color: var(--red);
+            border-color: var(--red-dim);
+        }
+        .btn-purge:hover {
+            background: var(--red);
+            color: var(--bg-0);
+            border-color: var(--red);
+        }
     </style>
 </head>
 <body>
@@ -654,9 +879,86 @@
                 <input type="text" id="apiBaseUrl" value="https://localhost:7224" spellcheck="false">
             </div>
             <button class="btn btn-ghost btn-sm" onclick="refreshAllStats(true)">↻ Refresh</button>
+
+            <!-- PURGE ZONE -->
+            <div class="purge-zone">
+                <div class="purge-summary">
+                    <span id="purgeSumOrders">ORD <b>—</b></span>
+                    <span id="purgeSumOutbox">OBX <b>—</b></span>
+                    <span id="purgeSumDl">DL <b>—</b></span>
+                </div>
+                <button class="btn btn-purge btn-sm" onclick="purgeDatabase()" title="Delete all rows from Orders, OutboxMessages, and DeadLetterLogs">⚠ Purge DB</button>
+            </div>
+
             <div class="live-indicator">
                 <span class="live-dot" id="liveDot"></span>
                 <span id="connStatus">CONNECTING...</span>
+            </div>
+
+            <!-- THEME SELECTOR -->
+            <div class="theme-selector">
+                <button class="theme-trigger" onclick="toggleThemeMenu()" id="themeTrigger">
+                    <span class="theme-swatch" id="themeSwatch"></span>
+                    <span id="themeName">THEME</span>
+                    <span style="opacity:0.5">▾</span>
+                </button>
+                <div class="theme-menu" id="themeMenu">
+                    <div class="theme-option" data-theme="terminal" onclick="setTheme('terminal')">
+                        <div class="swatches">
+                            <div class="swatch" style="background:#0a0e14"></div>
+                            <div class="swatch" style="background:#ffb020"></div>
+                            <div class="swatch" style="background:#00d68f"></div>
+                        </div>
+                        <div class="label-row">
+                            <span>Terminal</span>
+                            <span class="label-sub">deep navy · amber</span>
+                        </div>
+                    </div>
+                    <div class="theme-option" data-theme="bloomberg" onclick="setTheme('bloomberg')">
+                        <div class="swatches">
+                            <div class="swatch" style="background:#1a1a1a"></div>
+                            <div class="swatch" style="background:#ff8000"></div>
+                            <div class="swatch" style="background:#00ff66"></div>
+                        </div>
+                        <div class="label-row">
+                            <span>Bloomberg</span>
+                            <span class="label-sub">classic terminal</span>
+                        </div>
+                    </div>
+                    <div class="theme-option" data-theme="arctic" onclick="setTheme('arctic')">
+                        <div class="swatches">
+                            <div class="swatch" style="background:#f5f7fa"></div>
+                            <div class="swatch" style="background:#0066cc"></div>
+                            <div class="swatch" style="background:#00875a"></div>
+                        </div>
+                        <div class="label-row">
+                            <span>Arctic</span>
+                            <span class="label-sub">bright · cool · light</span>
+                        </div>
+                    </div>
+                    <div class="theme-option" data-theme="solar" onclick="setTheme('solar')">
+                        <div class="swatches">
+                            <div class="swatch" style="background:#faf6ed"></div>
+                            <div class="swatch" style="background:#b8541a"></div>
+                            <div class="swatch" style="background:#5c8a2f"></div>
+                        </div>
+                        <div class="label-row">
+                            <span>Solar</span>
+                            <span class="label-sub">warm cream · sepia</span>
+                        </div>
+                    </div>
+                    <div class="theme-option" data-theme="ledger" onclick="setTheme('ledger')">
+                        <div class="swatches">
+                            <div class="swatch" style="background:#ffffff"></div>
+                            <div class="swatch" style="background:#c2185b"></div>
+                            <div class="swatch" style="background:#2e7d32"></div>
+                        </div>
+                        <div class="label-row">
+                            <span>Ledger</span>
+                            <span class="label-sub">paper · accountant</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -700,11 +1002,11 @@
     <!-- ============= TABS ============= -->
     <div class="tab-bar">
         <div class="tab-bar-inner">
-            <button class="tab active" data-tab="orders"><span class="tab-num">01</span>Orders</button>
-            <button class="tab" data-tab="outbox"><span class="tab-num">02</span>Outbox</button>
-            <button class="tab" data-tab="deadletter"><span class="tab-num">03</span>Dead Letter</button>
-            <button class="tab" data-tab="scenarios"><span class="tab-num">04</span>Scenarios</button>
-            <button class="tab" data-tab="architecture"><span class="tab-num">05</span>Architecture</button>
+            <button class="tab active" data-tab="orders">Orders</button>
+            <button class="tab" data-tab="outbox">Outbox</button>
+            <button class="tab" data-tab="deadletter">Dead Letter</button>
+            <button class="tab" data-tab="scenarios">Scenarios</button>
+            <button class="tab" data-tab="architecture">Architecture</button>
         </div>
     </div>
 
@@ -1266,6 +1568,21 @@
 
 <script>
 // =================================================================
+// DEFAULT THEME — change this to set the starting theme.
+// Available themes: 'terminal' | 'bloomberg' | 'arctic' | 'solar' | 'ledger'
+// User selections override this and persist in localStorage.
+// =================================================================
+const DEFAULT_THEME = 'terminal';
+
+const THEME_LABELS = {
+    terminal:  { name: 'Terminal',  color: '#ffb020' },
+    bloomberg: { name: 'Bloomberg', color: '#ff8000' },
+    arctic:    { name: 'Arctic',    color: '#0066cc' },
+    solar:     { name: 'Solar',     color: '#b8541a' },
+    ledger:    { name: 'Ledger',    color: '#c2185b' },
+};
+
+// =================================================================
 // STATE
 // =================================================================
 const state = {
@@ -1275,7 +1592,43 @@ const state = {
     globalRefreshTimer: null,
     apiHealthy: false,
     prevStats: {},
+    currentTheme: DEFAULT_THEME,
 };
+
+// =================================================================
+// THEME SWITCHING
+// =================================================================
+function setTheme(name) {
+    if (!THEME_LABELS[name]) name = DEFAULT_THEME;
+    document.documentElement.setAttribute('data-theme', name);
+    state.currentTheme = name;
+    try { localStorage.setItem('tradingops-theme', name); } catch (e) { /* ignore */ }
+    const trig = document.getElementById('themeName');
+    const swatch = document.getElementById('themeSwatch');
+    if (trig) trig.textContent = THEME_LABELS[name].name.toUpperCase();
+    if (swatch) swatch.style.background = THEME_LABELS[name].color;
+    document.querySelectorAll('.theme-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.theme === name);
+    });
+    closeThemeMenu();
+}
+
+function toggleThemeMenu() {
+    document.getElementById('themeMenu').classList.toggle('open');
+}
+function closeThemeMenu() {
+    document.getElementById('themeMenu').classList.remove('open');
+}
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.theme-selector')) closeThemeMenu();
+});
+
+// Initialize theme: localStorage override > DEFAULT_THEME
+(function initTheme() {
+    let saved = null;
+    try { saved = localStorage.getItem('tradingops-theme'); } catch (e) { /* ignore */ }
+    setTheme(saved && THEME_LABELS[saved] ? saved : DEFAULT_THEME);
+})();
 
 // =================================================================
 // HELPERS
@@ -1369,29 +1722,98 @@ async function refreshAllStats(force = false) {
     const anyOk = orders.ok || outboxStats.ok || dlStats.ok;
     setConnStatus(anyOk, anyOk ? 'CONNECTED' : 'API OFFLINE');
 
+    let ordersCount = 0, outboxCount = 0, dlCount = 0;
+
     if (orders.ok && Array.isArray(orders.body)) {
-        $('gOrders').textContent = orders.body.length;
+        ordersCount = orders.body.length;
+        $('gOrders').textContent = ordersCount;
         $('gOrdersProcessed').textContent = orders.body.filter(o => o.isProcessed).length;
-        $('gOrdersTrend').textContent = orders.body.length > 0 ? `last: ${fmtDate(orders.body[0].createdAt)}` : 'no orders yet';
+        $('gOrdersTrend').textContent = ordersCount > 0 ? `last: ${fmtDate(orders.body[0].createdAt)}` : 'no orders yet';
     } else if (!anyOk) {
         $('gOrders').textContent = '—';
         $('gOrdersProcessed').textContent = '—';
         $('gOrdersTrend').textContent = 'awaiting feed';
     }
     if (outboxStats.ok && outboxStats.body) {
-        $('gOutbox').textContent = outboxStats.body.totalCount ?? 0;
+        outboxCount = outboxStats.body.totalCount ?? 0;
+        $('gOutbox').textContent = outboxCount;
         $('gOutboxUnp').textContent = outboxStats.body.unprocessedCount ?? 0;
     } else if (!anyOk) {
         $('gOutbox').textContent = '—';
         $('gOutboxUnp').textContent = '—';
     }
     if (dlStats.ok && dlStats.body) {
-        $('gDl').textContent = dlStats.body.totalCount ?? 0;
+        dlCount = dlStats.body.totalCount ?? 0;
+        $('gDl').textContent = dlCount;
         $('gDlUnres').textContent = dlStats.body.unresolvedCount ?? 0;
     } else if (!anyOk) {
         $('gDl').textContent = '—';
         $('gDlUnres').textContent = '—';
     }
+
+    // Update purge zone summary
+    updatePurgeSummary(anyOk, ordersCount, outboxCount, dlCount);
+}
+
+function updatePurgeSummary(connected, orders, outbox, dl) {
+    const set = (id, label, count) => {
+        const el = $(id);
+        if (!el) return;
+        if (!connected) {
+            el.innerHTML = `${label} <b>—</b>`;
+            el.classList.remove('has-data');
+        } else {
+            el.innerHTML = `${label} <b>${count}</b>`;
+            el.classList.toggle('has-data', count > 0);
+        }
+    };
+    set('purgeSumOrders', 'ORD', orders);
+    set('purgeSumOutbox', 'OBX', outbox);
+    set('purgeSumDl',     'DL',  dl);
+}
+
+async function purgeDatabase() {
+    const ordersCount = parseInt($('gOrders').textContent, 10) || 0;
+    const outboxCount = parseInt($('gOutbox').textContent, 10) || 0;
+    const dlCount     = parseInt($('gDl').textContent, 10) || 0;
+    const total = ordersCount + outboxCount + dlCount;
+
+    if (total === 0) {
+        alert('Nothing to purge — all tables are already empty.');
+        return;
+    }
+
+    const msg = `PURGE WARNING\n\nThis will DELETE ALL rows from:\n` +
+                `  • Orders          (${ordersCount})\n` +
+                `  • OutboxMessages  (${outboxCount})\n` +
+                `  • DeadLetterLogs  (${dlCount})\n\n` +
+                `Total rows to delete: ${total}\n\nProceed?`;
+    if (!confirm(msg)) return;
+
+    const results = await Promise.allSettled([
+        api('/api/order', { method: 'DELETE' }),
+        api('/api/outboxmessage', { method: 'DELETE' }),
+        api('/api/deadletter', { method: 'DELETE' }),
+    ]);
+
+    const summary = results.map((r, i) => {
+        const label = ['Orders', 'OutboxMessages', 'DeadLetterLogs'][i];
+        if (r.status === 'rejected') return `${label}: REJECTED`;
+        const v = r.value;
+        if (v.networkError) return `${label}: NETWORK FAIL`;
+        if (!v.ok) return `${label}: HTTP ${v.status}`;
+        return `${label}: OK`;
+    }).join('\n');
+
+    alert(`PURGE COMPLETE\n\n${summary}`);
+
+    // Refresh everything
+    refreshAllStats();
+    if ($('ordersList')) getAllOrders();
+    const outboxList = $('outboxList');
+    if (outboxList && !outboxList.innerHTML.includes('no messages loaded')) getOutbox('all');
+    const dlList = $('dlList');
+    if (dlList && !dlList.innerHTML.includes('no dead letters loaded')) getDeadLetters('all');
 }
 
 // =================================================================
