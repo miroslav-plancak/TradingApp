@@ -2,6 +2,8 @@
 using TradingApp.Domain.Models.Entities;
 using TradingApp.Domain.Models.Entities.Order;
 using TradingApp.Domain.Models.Entities.OutboxMessage;
+using TradingApp.Domain.Models.Entities.QuarantinedOutboxMessage;
+using TradingApp.Domain.Models.Enums;
 
 namespace TradingApp.Domain
 {
@@ -10,17 +12,20 @@ namespace TradingApp.Domain
         public TradingDbContext(DbContextOptions<TradingDbContext> options) : base(options) { }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OutboxMessage> OutboxMessages {get; set; }
-
         public DbSet<DeadLetterLog> DeadLetterLogs { get; set;}
+        public DbSet<QuarantinedOutboxMessage> QuarantinedOutboxMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<Order>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
                 entity.Property(e => e.ClientOrderId).IsRequired();
                 entity.HasIndex(e => e.ClientOrderId).IsUnique();
+
                 entity.Property(e => e.Status).IsRequired();
                 entity.Property(e => e.Quantity).IsRequired();
                 entity.Property(e => e.Price).IsRequired().HasColumnType("decimal(18,2)");
@@ -32,18 +37,23 @@ namespace TradingApp.Domain
             modelBuilder.Entity<OutboxMessage>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
                 entity.Property(e => e.Type).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.Payload).IsRequired();
                 entity.Property(e => e.CreatedAt).IsRequired();
                 entity.Property(e => e.ProcessedAt);
                 entity.Property(e => e.RetryCount).IsRequired();
+                entity.Property(e => e.RetryReason).IsRequired().HasDefaultValue(OutboxRetryReason.None);
+                entity.Property(e => e.LastError);
             });
 
             modelBuilder.Entity<DeadLetterLog>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
                 entity.Property(e => e.ClientOrderId).IsRequired();
                 entity.HasIndex(e => e.ClientOrderId);
+
                 entity.Property(e => e.MessageBody).IsRequired();
                 entity.Property(e => e.Reason).IsRequired().HasMaxLength(500);
                 entity.Property(e => e.CreatedAt).IsRequired();
@@ -51,6 +61,29 @@ namespace TradingApp.Domain
                 entity.Property(e => e.ResolutionNotes).HasMaxLength(2000);
                 entity.Property(e => e.ResolvedAt);
                 entity.Property(e => e.ResolvedBy).HasMaxLength(200);
+            });
+
+            modelBuilder.Entity<QuarantinedOutboxMessage>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => e.OriginalOutboxMessageId);
+                entity.Property(e => e.OriginalOutboxMessageId).IsRequired();
+
+                entity.HasIndex(e => e.ClientOrderId);
+                entity.Property(e => e.ClientOrderId);
+
+                entity.Property(e => e.Payload).IsRequired();
+                entity.Property(e => e.Reason).IsRequired();
+                entity.Property(e => e.FinalRetryCount).IsRequired();
+                entity.Property(e => e.ErrorMessage).HasMaxLength(2000);
+                entity.Property(e => e.QuarantinedAt).IsRequired();
+                entity.Property(e => e.IsResurrected).IsRequired().HasDefaultValue(false);
+                entity.Property(e => e.ResurrectedAt);
+                entity.Property(e => e.IsDiscarded).IsRequired().HasDefaultValue(false);
+                entity.Property(e => e.DiscardedAt);
+                entity.Property(e => e.DiscardedBy).HasMaxLength(200);
+                entity.Property(e => e.ResolutionNotes).HasMaxLength(2000);
             });
         }
     }

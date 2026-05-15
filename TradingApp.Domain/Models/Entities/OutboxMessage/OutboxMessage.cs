@@ -1,4 +1,5 @@
 ﻿using System;
+using TradingApp.Domain.Models.Enums;
 
 namespace TradingApp.Domain.Models.Entities.OutboxMessage
 {
@@ -10,5 +11,7 @@ namespace TradingApp.Domain.Models.Entities.OutboxMessage
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? ProcessedAt { get; set; }
         public int RetryCount { get; set; }
+        public OutboxRetryReason RetryReason { get; set; } = OutboxRetryReason.None;
+        public string? LastError { get; set; }
     }
 }

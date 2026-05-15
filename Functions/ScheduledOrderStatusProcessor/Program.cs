@@ -11,17 +11,14 @@ var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.ConfigureFunctionsWebApplication();
 
-// Add Key Vault support for local development
 builder.Configuration.AddAzureKeyVault(
     new Uri("https://tradingapp-demo-kv.vault.azure.net/"),
     new DefaultAzureCredential());
 
-//logging
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
 
-//register DbContext
 builder.Services.AddDbContext<TradingDbContext>(options =>
     options.UseSqlServer(builder.Configuration["SqlConnectionString"])
 );
