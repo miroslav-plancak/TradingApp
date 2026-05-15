@@ -19,7 +19,7 @@ namespace ScheduledOutboxMessageProcessor
 
         public ScheduledOutboxMessageProcessor
         (
-            ILoggerFactory loggerFactory, 
+            ILoggerFactory loggerFactory,
             TradingDbContext tradingDbContext,
             IConfiguration configuration
         )
@@ -36,11 +36,26 @@ namespace ScheduledOutboxMessageProcessor
         {
             _logger.LogInformation("ScheduledOutboxMessageProcessor triggered at: {triggerTime}.",
                 DateTimeOffset.UtcNow);
+
+            await QuarantineExhaustedMessages();
+
+            bool isServiceBusHealthy = await ProcessPendingMessages();
+
+            if (isServiceBusHealthy)
+            {
+                await AutoRecoverResurrectedMessages();
+            }
            
-            // PHASE 1: Quarantine messages that have exhausted 5 retries
+            await _tradingDbContext.SaveChangesAsync();
+        }
+
+        private async Task QuarantineExhaustedMessages()
+        {
             var exhaustedOutboxMessages = await _tradingDbContext.OutboxMessages
                 .Where(x => x.ProcessedAt == null && x.RetryCount >= 5)
                 .ToListAsync();
+
+            if (exhaustedOutboxMessages.Count == 0) return;
 
             foreach (var exOutboxMsg in exhaustedOutboxMessages)
             {
@@ -56,7 +71,6 @@ namespace ScheduledOutboxMessageProcessor
                     FinalRetryCount = exOutboxMsg.RetryCount,
                     QuarantinedAt = DateTimeOffset.UtcNow,
                     ErrorMessage = exOutboxMsg.LastError
-
                 });
 
                 exOutboxMsg.ProcessedAt = DateTimeOffset.UtcNow;
@@ -65,13 +79,34 @@ namespace ScheduledOutboxMessageProcessor
                     "Quarantined outbox message {Id}, reason: {Reason}, retries: {Count}",
                     exOutboxMsg.Id, exOutboxMsg.RetryReason, exOutboxMsg.RetryCount);
             }
-           
-            // PHASE 2: Process pending messages
+        }
+
+        private async Task<bool> ProcessPendingMessages()
+        {
             var outboxMessages = await _tradingDbContext.OutboxMessages
                 .Where(x => x.ProcessedAt == null && x.RetryCount < 5)
                 .OrderBy(x => x.CreatedAt)
                 .Take(50)
                 .ToListAsync();
+
+            if (outboxMessages.Count == 0) return false;
+
+            var clientOrderIds = outboxMessages
+                .Where(x => Guid.TryParse(x.Payload, out _))
+                .Select(x => Guid.Parse(x.Payload))
+                .ToHashSet();
+
+            var alreadyProcessedOrders = new HashSet<Guid>();
+
+            if (clientOrderIds.Count > 0)
+            {
+                var processedOrders = await _tradingDbContext.Orders
+                    .Where(x => clientOrderIds.Contains(x.ClientOrderId) && x.IsProcessed)
+                    .Select(x => x.ClientOrderId)
+                    .ToListAsync();
+
+                alreadyProcessedOrders = new HashSet<Guid>(processedOrders);
+            }
 
             bool isServiceBusHealthy = false;
 
@@ -81,25 +116,15 @@ namespace ScheduledOutboxMessageProcessor
                 {
                     if (Guid.TryParse(outboxMessage.Payload, out var clientOrderId))
                     {
-                        var isProcessedAlready = await _tradingDbContext.Orders
-                            .Where(x => x.ClientOrderId == clientOrderId)
-                            .Select(x => x.IsProcessed)
-                            .FirstOrDefaultAsync();
-
-                        if (isProcessedAlready)
+                        if (alreadyProcessedOrders.Contains(clientOrderId))
                         {
                             outboxMessage.ProcessedAt = DateTimeOffset.UtcNow;
                             continue;
                         }
-                        else
-                        {
-                            await NotifyServiceBusCreateOrderQueue(clientOrderId);
 
-                            //throw new Exception("ScheduledOutboxMessageProcessor is offline.");
-
-                            outboxMessage.ProcessedAt = DateTimeOffset.UtcNow;
-                            isServiceBusHealthy = true;
-                        }
+                        await NotifyServiceBusCreateOrderQueue(clientOrderId);
+                        outboxMessage.ProcessedAt = DateTimeOffset.UtcNow;
+                        isServiceBusHealthy = true;
                     }
                     else
                     {
@@ -123,56 +148,54 @@ namespace ScheduledOutboxMessageProcessor
                 }
             }
 
-            // PHASE 3: Auto-recovery — Service Bus is back online,
-            //          resurrect transient-failure quarantined messages
-            if (isServiceBusHealthy)
+            return isServiceBusHealthy;
+        }
+
+        private async Task AutoRecoverResurrectedMessages()
+        {
+            var resurrectCandidates = await _tradingDbContext.QuarantinedOutboxMessages
+                .Where(q => !q.IsResurrected
+                         && !q.IsDiscarded
+                         && q.Reason == OutboxRetryReason.ServiceBusUnavailable)
+                .ToListAsync();
+
+            if (resurrectCandidates.Count == 0) return;
+
+            var originalMessageIds = resurrectCandidates
+                .Select(c => c.OriginalOutboxMessageId)
+                .ToHashSet();
+
+            var originalMessages = await _tradingDbContext.OutboxMessages
+                .Where(x => originalMessageIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id);
+
+            foreach (var candidate in resurrectCandidates)
             {
-                var resurrectCandidates = await _tradingDbContext.QuarantinedOutboxMessages
-                    .Where(q => !q.IsResurrected
-                             && !q.IsDiscarded
-                             && q.Reason == OutboxRetryReason.ServiceBusUnavailable)
-                    .ToListAsync();
-
-                foreach (var candidate in resurrectCandidates)
+                if (originalMessages.TryGetValue(candidate.OriginalOutboxMessageId, out var originalOutboxMessage))
                 {
-                    var originalOutboxMessage = await _tradingDbContext.OutboxMessages
-                        .FirstOrDefaultAsync(x => x.Id == candidate.OriginalOutboxMessageId);
+                    originalOutboxMessage.ProcessedAt = null;
+                    originalOutboxMessage.RetryCount = 4;
+                    originalOutboxMessage.RetryReason = OutboxRetryReason.None;
 
-                    if (originalOutboxMessage != null)
-                    {
-                        originalOutboxMessage.ProcessedAt = null;     
-                        originalOutboxMessage.RetryCount = 4;        
-                        originalOutboxMessage.RetryReason = OutboxRetryReason.None;
+                    candidate.IsResurrected = true;
+                    candidate.ResurrectedAt = DateTimeOffset.UtcNow;
+                    candidate.ResolutionNotes = "Auto-resurrected: Service Bus connectivity restored";
 
-                        candidate.IsResurrected = true;
-                        candidate.ResurrectedAt = DateTimeOffset.UtcNow;
-                        candidate.ResolutionNotes = "Auto-resurrected: Service Bus connectivity restored";
-
-                        _logger.LogInformation(
-                            "Resurrected outbox message {Id} from quarantine — Service Bus is healthy",
-                            originalOutboxMessage.Id);
-                    }
-                }
-
-                if (resurrectCandidates.Count > 0)
-                {
                     _logger.LogInformation(
-                        "Service Bus healthy — resurrected {Count} transient-failure messages",
-                        resurrectCandidates.Count);
+                        "Resurrected outbox message {Id} from quarantine — Service Bus is healthy",
+                        originalOutboxMessage.Id);
                 }
             }
 
-            //throw new Exception("ScheduledOutboxMessageProcessor's database is offline/unreachable.");
-            await _tradingDbContext.SaveChangesAsync();
+            _logger.LogInformation(
+                "Service Bus healthy — resurrected {Count} transient-failure messages",
+                resurrectCandidates.Count);
         }
 
         private async Task NotifyServiceBusCreateOrderQueue(Guid clientOrderId)
         {
             var payload = new { ClientOrderId = clientOrderId };
             var json = JsonSerializer.Serialize(payload);
-
-            //throw new Exception("ServiceBusQueue is offline/unreachable.");
-
             await _sender.SendMessageAsync(new ServiceBusMessage(json));
         }
     }
