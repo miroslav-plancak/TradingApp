@@ -14,9 +14,11 @@ namespace TradingApp.Business.Services.Regular
     {
         private readonly IOutboxMessageRepository _outboxMessageRepository;
 
-        public OutboxMessageService(
+        public OutboxMessageService
+        (
             ITradingAppLogger logger,
-            IOutboxMessageRepository outboxMessageRepository) : base(logger)
+            IOutboxMessageRepository outboxMessageRepository
+        ) : base(logger)
         {
             _outboxMessageRepository = outboxMessageRepository;
         }
@@ -26,6 +28,12 @@ namespace TradingApp.Business.Services.Regular
             LogEntryWithScope();
 
             var entity = await _outboxMessageRepository.GetByIdAsync(id);
+
+            if (entity == null)
+            {
+                throw new KeyNotFoundException($"Outbox message {id} not found.");
+            }
+
             var dto = OutboxMessageMapper.ToOutboxMessageResponseDTO(entity);
 
             LogExitWithScope();
@@ -74,6 +82,12 @@ namespace TradingApp.Business.Services.Regular
             LogEntryWithScope();
 
             var entity = await _outboxMessageRepository.MarkAsProcessedAsync(id);
+
+            if (entity == null)
+            {
+                throw new KeyNotFoundException($"Outbox message {id} not found.");
+            }
+
             var dto = OutboxMessageMapper.ToOutboxMessageResponseDTO(entity);
 
             LogExitWithScope();
@@ -84,6 +98,13 @@ namespace TradingApp.Business.Services.Regular
         public async Task<bool> DeleteAsync(Guid id)
         {
             LogEntryWithScope();
+
+            var entity = await _outboxMessageRepository.GetByIdAsync(id);
+
+            if (entity == null)
+            {
+                throw new KeyNotFoundException($"Outbox message {id} not found.");
+            }
 
             var deleted = await _outboxMessageRepository.DeleteAsync(id);
 

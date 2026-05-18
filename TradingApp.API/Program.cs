@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TradingApp.Business;
+using TradingApp.Business.Middleware;
 using TradingApp.Business.Interfaces.Logger;
 using TradingApp.Business.Logger;
 using TradingApp.Domain;
@@ -37,6 +38,7 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 app.UseCors("AllowAll");
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -70,6 +70,7 @@ namespace OrderExecutionProvider
 
             _logger.LogInformation("Order processed successfully: {Id}", payload.ClientOrderId);
 
+            //TODO:: devise a way to handle the case when ServiceBusClient for this topic is down and publishing is lost here.
             await PublishOrderProcessedEvent(payload.ClientOrderId, randomStatus);
         }
 

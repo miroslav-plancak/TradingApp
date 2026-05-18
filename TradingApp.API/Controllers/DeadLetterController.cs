@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using TradingApp.Business.DTOs.DeadLetter;
 using TradingApp.Business.Interfaces.Logger;
@@ -17,6 +18,7 @@ namespace TradingApp.API.Controllers
         }
 
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<DeadLetterLogResponseDTO>), 200)]
         public async Task<ActionResult> GetAllDeadLetterLogsAsync()
         {
             var result = await _deadLetterService.GetAllDeadLetterLogsAsync();
@@ -24,6 +26,7 @@ namespace TradingApp.API.Controllers
         }
 
         [HttpGet("unresolved")]
+        [ProducesResponseType(typeof(IEnumerable<DeadLetterLogResponseDTO>), 200)]
         public async Task<ActionResult> GetUnresolvedDeadLetterLogsAsync()
         {
             var result = await _deadLetterService.GetUnresolvedDeadLetterLogsAsync();
@@ -31,32 +34,25 @@ namespace TradingApp.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(DeadLetterLogResponseDTO), 200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult> GetDeadLetterLogByIdAsync([FromRoute] Guid id)
         {
             var result = await _deadLetterService.GetDeadLetterLogByIdAsync(id);
-
-            if (result == null)
-            {
-                return NotFound();
-            }
-
             return Ok(result);
         }
 
         [HttpPost("{id}/resolve")]
+        [ProducesResponseType(typeof(DeadLetterLogResponseDTO), 200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult> MarkAsResolvedAsync([FromRoute] Guid id, [FromBody] ResolveDeadLetterRequestDTO resolveRequest)
         {
             var result = await _deadLetterService.MarkAsResolvedAsync(id, resolveRequest);
-
-            if (result == null)
-            {
-                return NotFound();
-            }
-
             return Ok(result);
         }
 
         [HttpGet("stats")]
+        [ProducesResponseType(typeof(DeadLetterStatsDTO), 200)]
         public async Task<ActionResult> GetStatsAsync()
         {
             var result = await _deadLetterService.GetStatsAsync();
@@ -64,19 +60,16 @@ namespace TradingApp.API.Controllers
         }
 
         [HttpGet("by-client-order/{clientOrderId}")]
+        [ProducesResponseType(typeof(DeadLetterLogResponseDTO), 200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult> GetByClientOrderIdAsync([FromRoute] Guid clientOrderId)
         {
             var result = await _deadLetterService.GetByClientOrderIdAsync(clientOrderId);
-
-            if (result == null)
-            {
-                return NotFound();
-            }
-
             return Ok(result);
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(DeadLetterLogResponseDTO), 200)]
         public async Task<ActionResult> CreateDeadLetterLogAsync([FromBody] CreateDeadLetterRequestDTO createRequest)
         {
             var result = await _deadLetterService.CreateDeadLetterLogAsync(createRequest);
@@ -84,19 +77,16 @@ namespace TradingApp.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [ProducesResponseType(typeof(DeadLetterLogResponseDTO), 200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult> DeleteDeadLetterLogAsync([FromRoute] Guid id)
         {
-            var deleted = await _deadLetterService.DeleteDeadLetterLogAsync(id);
-
-            if (!deleted)
-            {
-                return NotFound();
-            }
-
-            return NoContent();
+            var result = await _deadLetterService.DeleteDeadLetterLogAsync(id);
+            return Ok(result);
         }
 
         [HttpDelete]
+        [ProducesResponseType(200)]
         public async Task<ActionResult> DeleteAllDeadLetterLogsAsync()
         {
             var deletedCount = await _deadLetterService.DeleteAllDeadLetterLogsAsync();

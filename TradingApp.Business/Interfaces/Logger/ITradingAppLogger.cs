@@ -10,6 +10,7 @@ namespace TradingApp.Business.Interfaces.Logger
         void SetClassScope(string className);
         void SetControllerScope(string controllerName);
         void SetMethodScope(string methodName);
+        void LogWarning(Exception ex, string message);
         IDisposable BeginScope();
     }
 }

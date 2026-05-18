@@ -22,21 +22,27 @@ namespace TradingApp.Business.Services.Regular
             _deadLetterRepository = deadLetterRepository;
         }
 
-        public async Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(string messageBody, Guid clientOrderId, string reason)
+        public Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(string messageBody, Guid clientOrderId, string reason)
+        {
+            return CreateDeadLetterLogAsync(new CreateDeadLetterRequestDTO
+            {
+                MessageBody = messageBody,
+                ClientOrderId = clientOrderId,
+                Reason = reason
+            });
+        }
+
+        public async Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(CreateDeadLetterRequestDTO createRequest)
         {
             LogEntryWithScope();
 
-            var deadLetterEntity = DeadLetterMapper.ToEntity(messageBody, clientOrderId, reason);
+            var deadLetterEntity = DeadLetterMapper.ToEntity(createRequest.MessageBody, createRequest.ClientOrderId, createRequest.Reason);
             var deadLetterLog = await _deadLetterRepository.CreateDeadLetterLogAsync(deadLetterEntity);
 
             LogExitWithScope();
 
-            return DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
-        }
-
-        public Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(CreateDeadLetterRequestDTO createRequest)
-        {
-            return CreateDeadLetterLogAsync(createRequest.MessageBody, createRequest.ClientOrderId, createRequest.Reason);
+            var result = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
+            return result;
         }
 
         public async Task<DeadLetterLogResponseDTO> GetByClientOrderIdAsync(Guid clientOrderId)
@@ -44,6 +50,12 @@ namespace TradingApp.Business.Services.Regular
             LogEntryWithScope();
 
             var deadLetterLog = await _deadLetterRepository.GetByClientOrderIdAsync(clientOrderId);
+
+            if (deadLetterLog == null)
+            {
+                throw new KeyNotFoundException($"Dead letter log for client order {clientOrderId} not found.");
+            }
+
             var deadLetterDTO = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
 
             LogExitWithScope();
@@ -54,6 +66,13 @@ namespace TradingApp.Business.Services.Regular
         public async Task<bool> DeleteDeadLetterLogAsync(Guid id)
         {
             LogEntryWithScope();
+
+            var deadLetterLog = await _deadLetterRepository.GetDeadLetterLogByIdAsync(id);
+
+            if (deadLetterLog == null)
+            {
+                throw new KeyNotFoundException($"Dead letter log {id} not found.");
+            }
 
             var deleted = await _deadLetterRepository.DeleteDeadLetterLogAsync(id);
 
@@ -79,6 +98,12 @@ namespace TradingApp.Business.Services.Regular
             LogEntryWithScope();
 
             var deadLetterLog = await _deadLetterRepository.GetDeadLetterLogByIdAsync(id);
+
+            if (deadLetterLog == null)
+            {
+                throw new KeyNotFoundException($"Dead letter log {id} not found.");
+            }
+
             var deadLetterDTO = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
 
             LogExitWithScope();
@@ -118,6 +143,11 @@ namespace TradingApp.Business.Services.Regular
                 id,
                 resolveRequest.ResolutionNotes,
                 resolveRequest.ResolvedBy);
+
+            if (deadLetterLog == null)
+            {
+                throw new KeyNotFoundException($"Dead letter log {id} not found.");
+            }
 
             var deadLetterDTO = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
 

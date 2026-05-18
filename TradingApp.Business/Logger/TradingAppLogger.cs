@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
-using Microsoft.Extensions.Logging;
 using TradingApp.Business.Constants;
 using TradingApp.Business.Interfaces.Logger;
 namespace TradingApp.Business.Logger
@@ -67,6 +69,50 @@ namespace TradingApp.Business.Logger
             SetScopeValue(LoggingConstants.MethodNameScope, methodName);
         }
 
+        public void LogWarning(Exception ex, string message)
+        {
+            using var scope = BeginScopeWithProperties();
+            _logger.LogWarning(ex, message);
+        }
+
+        private IDisposable BeginScopeWithProperties(params (string key, object value)[] properties)
+        {
+            var combinedScope = new Dictionary<string, object>(Scope);
+
+            if (properties != null)
+            {
+                foreach (var (key, value) in properties)
+                {
+                    combinedScope[key] = SerializeScopeValue(value);
+                }
+            }
+
+            return _logger.BeginScope(combinedScope);
+        }
+
+        private object SerializeScopeValue(object value)
+        {
+            if (value == null)
+                return "null";
+
+            if (IsSimple(value.GetType()))
+                return value;
+
+            try
+            {
+                return JsonSerializer.Serialize(value, new JsonSerializerOptions
+                {
+                    WriteIndented = false,
+                    ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                });
+            }
+            catch
+            {
+                return $"[Unserializable: {value.GetType().FullName}]";
+            }
+        }
+
         //Note: unused for now, might need it in the future
         private string GetScopeValue(string key)
         {
@@ -80,6 +126,17 @@ namespace TradingApp.Business.Logger
         private void SetScopeValue(string key, object value) 
         {
             Scope[key] = value;
+        }
+
+        private static bool IsSimple(Type type)
+        {
+            return type.IsPrimitive ||
+                   type.IsEnum ||
+                   type == typeof(string) ||
+                   type == typeof(decimal) ||
+                   type == typeof(DateTime) ||
+                   type == typeof(Guid) ||
+                   type == typeof(DateTimeOffset);
         }
     }
 }

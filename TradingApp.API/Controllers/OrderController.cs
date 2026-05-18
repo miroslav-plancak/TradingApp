@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using TradingApp.Business.DTOs.Order;
 using TradingApp.Business.Interfaces.Logger;
@@ -17,6 +18,7 @@ namespace TradingApp.API.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(CreatedOrderResponseDTO), 200)]
         public async Task<ActionResult> CreateOrderAsync(CreateOrderRequestDTO createOrder)
         {
             var result = await _orderService.CreateOrderAsync(createOrder);
@@ -24,6 +26,8 @@ namespace TradingApp.API.Controllers
         }
 
         [HttpGet("{orderId}")]
+        [ProducesResponseType(typeof(OrderResponseDTO), 200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult> GetOrderByIdAsync([FromRoute] Guid orderId)
         {
             var result = await _orderService.GetOrderByIdAsync(orderId);
@@ -31,6 +35,7 @@ namespace TradingApp.API.Controllers
         }
 
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<OrderResponseDTO>), 200)]
         public async Task<ActionResult> GetOrdersAsync()
         {
             var result = await _orderService.GetOrdersAsync();
@@ -38,19 +43,16 @@ namespace TradingApp.API.Controllers
         }
 
         [HttpDelete("{orderId}")]
+        [ProducesResponseType(typeof(OrderResponseDTO), 200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult> DeleteOrderAsync([FromRoute] Guid orderId)
         {
-            var deleted = await _orderService.DeleteOrderAsync(orderId);
-
-            if (!deleted)
-            {
-                return NotFound();
-            }
-
-            return NoContent();
+            var result = await _orderService.DeleteOrderAsync(orderId);
+            return Ok(result);
         }
 
         [HttpDelete]
+        [ProducesResponseType(200)]
         public async Task<ActionResult> DeleteAllOrdersAsync()
         {
             var deletedCount = await _orderService.DeleteAllOrdersAsync();

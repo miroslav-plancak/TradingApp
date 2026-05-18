@@ -1,9 +1,7 @@
-﻿using Azure.Messaging.ServiceBus;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using TradingApp.Business.Constants;
 using TradingApp.Business.DTOs.Order;
 using TradingApp.Business.Extensions;
 using TradingApp.Business.Interfaces.Logger;
@@ -11,7 +9,6 @@ using TradingApp.Business.Interfaces.Repositories;
 using TradingApp.Business.Interfaces.Services;
 using TradingApp.Business.Mappers;
 using TradingApp.Domain;
-using TradingApp.Domain.Models.Entities;
 using TradingApp.Domain.Models.Entities.OutboxMessage;
 
 namespace TradingApp.Business.Services.Regular
@@ -20,17 +17,11 @@ namespace TradingApp.Business.Services.Regular
     {
         private readonly IOrderRepository _orderRepository;
         private readonly TradingDbContext _tradingDbContext;
-        private readonly JsonSerializerOptions _jsonOptions;
 
         public  OrderService(ITradingAppLogger logger, TradingDbContext tradingDbContext, IOrderRepository orderRepository) : base(logger)
         {
             _tradingDbContext = tradingDbContext;
             _orderRepository = orderRepository;
-
-            _jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
         }
 
         public async Task<CreatedOrderResponseDTO> CreateOrderAsync(CreateOrderRequestDTO orderRequest)
@@ -55,7 +46,9 @@ namespace TradingApp.Business.Services.Regular
 
             LogExitWithScope();
 
-            return OrderMapper.ToCreatedOrderResponseDTO(order);
+            var createdOrderResponseDTO = OrderMapper.ToCreatedOrderResponseDTO(order);
+
+            return createdOrderResponseDTO;
         }
 
         public async Task<OrderResponseDTO> GetOrderByIdAsync(Guid orderId)
@@ -63,9 +56,16 @@ namespace TradingApp.Business.Services.Regular
             LogEntryWithScope();
 
             var orderEntity = await _orderRepository.GetOrderByIdAsync(orderId);
+
+            if (orderEntity == null)
+            {
+                throw new KeyNotFoundException($"Order {orderId} not found.");
+            }
+
             var orderDTO = OrderMapper.ToOrderResponseDTO(orderEntity);
 
             LogExitWithScope();
+
             return orderDTO;
         }
 
@@ -84,6 +84,13 @@ namespace TradingApp.Business.Services.Regular
         public async Task<bool> DeleteOrderAsync(Guid orderId)
         {
             LogEntryWithScope();
+
+            var orderEntity = await _orderRepository.GetOrderByIdAsync(orderId);
+
+            if (orderEntity == null)
+            {
+                throw new KeyNotFoundException($"Order {orderId} not found.");
+            }
 
             var deleted = await _orderRepository.DeleteOrderAsync(orderId);
 
