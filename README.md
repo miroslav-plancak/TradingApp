@@ -4,21 +4,23 @@ Simulation of an event-driven trading app using the Outbox Pattern, Azure Servic
 
 ## Architecture
 
-**ASP.NET Core API** — order creation endpoint, full CRUD for orders, outbox messages, dead letters, and quarantined messages.
+**ASP.NET Core API** — order creation endpoint, full CRUD for orders, outbox messages, dead letters, quarantined messages, and unpublished topic messages.
 
-**SQL Server** — single source of truth with 4 tables:
+**SQL Server** — single source of truth with 5 tables:
 - `Orders` — trading orders with full lifecycle status
 - `OutboxMessages` — transactional outbox with retry classification
 - `DeadLetterLogs` — Service Bus DLQ messages for operator triage
 - `QuarantinedOutboxMessages` — outbox messages that exhausted retries, classified by failure reason
+- `UnpublishedTopicMessages` — `OrderProcessed` events that failed to publish to the topic, retried by a dedicated processor
 
 **Azure Service Bus:**
 - Queue: `CREATE_ORDER_QUEUE` — command pattern, competing consumers
 - Topic: `order_events_topic` — pub/sub fan-out with 3 subscriptions (`risk-analysis`, `notifications`, `audit-log`)
 
 **Azure Functions** (isolated worker, .NET 8):
-- `OrderExecutionProvider` — consumes `CREATE_ORDER_QUEUE`, atomically updates order status, publishes `OrderProcessed` event to topic
+- `OrderExecutionProvider` — consumes `CREATE_ORDER_QUEUE`, atomically updates order status, publishes `OrderProcessed` event to topic; on topic failure persists to `UnpublishedTopicMessages`
 - `ScheduledOutboxMessageProcessor` — runs every minute, dispatches outbox messages to Service Bus with 3-phase processing (quarantine → dispatch → auto-recover)
+- `ScheduledUnpublishedTopicMessagesProcessor` — runs every minute, retries failed topic publishes from `UnpublishedTopicMessages`
 - `ScheduledOrderStatusProcessor` — promotes `ACKNOWLEDGED` orders to `FILLED` on a timer
 - `DeadLetterQueueProcessor` — consumes the DLQ, persists failures to `DeadLetterLogs`
 - `RiskAnalysisProcessor` — topic subscriber (`risk-analysis`)
@@ -35,7 +37,7 @@ Simulation of an event-driven trading app using the Outbox Pattern, Azure Servic
 2. **Run `Database/TradingApp_Setup.sql`** against your local SQL Server. If your instance name differs from `.\SQLEXPRESS`, update the connection string in `TradingApp.API/appsettings.json`
 3. **Sign into Visual Studio** with your Microsoft account — `DefaultAzureCredential` uses this to authenticate to Key Vault, no `az login` needed
 4. **Send me your email** so I can invite you to the Azure AD tenant and grant Key Vault access policy (`Get`, `List` on secrets) on `tradingapp-demo-kv`
-5. **Configure multiple startup projects** — set all 7 Functions + API to `Start`
+5. **Configure multiple startup projects** — set all 8 Functions + API to `Start`
 6. **F5** and open `UI/TradingAppUI.html` in your browser
 
 ## Key Vault Secrets
@@ -57,6 +59,8 @@ Simulation of an event-driven trading app using the Outbox Pattern, Azure Servic
 2. **Dispatch** — pending messages are batch-queried and published; failure increments retry count with a classified reason
 3. **Auto-recover** — if at least one publish succeeded (proving Service Bus is healthy), all quarantined `ServiceBusUnavailable` messages are resurrected for one more attempt; `InvalidPayload` messages stay quarantined for human triage
 
+**Topic reliability** — if `OrderExecutionProvider` fails to publish to `order_events_topic`, the event is persisted to `UnpublishedTopicMessages` with the exact `OrderStatus` at time of processing. `ScheduledUnpublishedTopicMessagesProcessor` retries these every minute, publishing directly to the topic without going through the queue or re-processing the order.
+
 **Queue vs topic** — `CREATE_ORDER_QUEUE` uses the command pattern (one consumer processes each message). `order_events_topic` uses pub/sub fan-out (all 3 subscribers independently receive every event).
 
 **DLQ handling** — messages that exhaust Service Bus delivery attempts flow to `DeadLetterQueueProcessor`, which persists them to `DeadLetterLogs` for operator resolution.
@@ -72,21 +76,22 @@ Simulation of an event-driven trading app using the Outbox Pattern, Azure Servic
 ```
 TradingApp/
 ├── Database/
-│   └── TradingApp_Setup.sql            # Full schema for all 4 tables
+│   └── TradingApp_Setup.sql                        # Full schema for all 5 tables
 ├── Functions/
-│   ├── OrderExecutionProvider/         # Service Bus queue consumer + topic publisher
-│   ├── ScheduledOutboxMessageProcessor/# 3-phase outbox dispatcher
-│   ├── ScheduledOrderStatusProcessor/  # ACK → FILLED promotion timer
-│   ├── DeadLetterQueueProcessor/       # DLQ consumer
-│   ├── RiskAnalysisProcessor/          # Topic subscriber
-│   ├── NotificationsProcessor/         # Topic subscriber
-│   └── AuditLogProcessor/              # Topic subscriber
-├── TradingApp.API/                     # ASP.NET Core REST API
-├── TradingApp.Business/                # Services, repositories, DTOs, mappers
-├── TradingApp.Domain/                  # Entities, enums, DbContext
-├── TradingApp.Events/                  # Shared event/payload contracts
+│   ├── OrderExecutionProvider/                     # Queue consumer + topic publisher
+│   ├── ScheduledOutboxMessageProcessor/            # 3-phase outbox dispatcher
+│   ├── ScheduledUnpublishedTopicMessagesProcessor/ # Topic publish retry processor
+│   ├── ScheduledOrderStatusProcessor/             # ACK → FILLED promotion timer
+│   ├── DeadLetterQueueProcessor/                  # DLQ consumer
+│   ├── RiskAnalysisProcessor/                     # Topic subscriber
+│   ├── NotificationsProcessor/                    # Topic subscriber
+│   └── AuditLogProcessor/                         # Topic subscriber
+├── TradingApp.API/                                # ASP.NET Core REST API
+├── TradingApp.Business/                           # Services, repositories, DTOs, mappers
+├── TradingApp.Domain/                             # Entities, enums, DbContext
+├── TradingApp.Events/                             # Shared event/payload contracts
 └── UI/
-    └── TradingAppUI.html               # Single-file testing dashboard
+    └── TradingAppUI.html                          # Single-file testing dashboard
 ```
 
 ## Enum Reference
