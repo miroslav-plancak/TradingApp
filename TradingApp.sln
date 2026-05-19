@@ -32,6 +32,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuditLogProcessor", "Functi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradingApp.Events", "TradingApp.Events\TradingApp.Events.csproj", "{B736E5D8-EF2F-4CBD-BCFB-D02F933E9F1B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScheduledUnpublishedTopicMessagesProcessor", "Functions\ScheduledUnpublishedTopicMessagesProcessor\ScheduledUnpublishedTopicMessagesProcessor.csproj", "{863AE64A-A191-4E0D-A7BC-98A9DE2AE4CE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +84,10 @@ Global
 		{B736E5D8-EF2F-4CBD-BCFB-D02F933E9F1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B736E5D8-EF2F-4CBD-BCFB-D02F933E9F1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B736E5D8-EF2F-4CBD-BCFB-D02F933E9F1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{863AE64A-A191-4E0D-A7BC-98A9DE2AE4CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{863AE64A-A191-4E0D-A7BC-98A9DE2AE4CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{863AE64A-A191-4E0D-A7BC-98A9DE2AE4CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{863AE64A-A191-4E0D-A7BC-98A9DE2AE4CE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

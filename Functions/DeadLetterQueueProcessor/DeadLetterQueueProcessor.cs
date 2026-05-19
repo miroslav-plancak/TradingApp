@@ -15,10 +15,12 @@ namespace DeadLetterQueueProcessor
         private readonly TradingDbContext _tradingDbContext;
         private readonly IDeadLetterService _deadLetterService;
 
-        public DeadLetterQueueProcessor(
+        public DeadLetterQueueProcessor
+        (
             ILogger<DeadLetterQueueProcessor> logger,
             TradingDbContext tradingDbContext,
-            IDeadLetterService deadLetterService)
+            IDeadLetterService deadLetterService
+        )
         {
             _logger = logger;
             _tradingDbContext = tradingDbContext;
@@ -26,11 +28,13 @@ namespace DeadLetterQueueProcessor
         }
 
         [Function("DeadLetterQueueProcessor")]
-        public async Task Run(
+        public async Task Run
+        (
             [ServiceBusTrigger(
             queueName: "CREATE_ORDER_QUEUE/$DeadLetterQueue",
             Connection = "ServiceBusConnection")]
-        string messageBody)
+            string messageBody
+        )
         {
             _logger.LogWarning("Dead Letter Queue message received at: {Time}", DateTimeOffset.UtcNow);
 

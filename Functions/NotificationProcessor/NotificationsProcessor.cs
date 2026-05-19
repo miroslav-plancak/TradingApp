@@ -18,12 +18,10 @@ namespace NotificationProcessor
         [Function(nameof(NotificationsProcessor))]
         public async Task Run
         (
-            [ServiceBusTrigger
-            (
+            [ServiceBusTrigger(
             "order_events_topic",
-           "notifications",
-            Connection = "ServiceBusConnection"
-            )]
+          "notifications",
+            Connection = "ServiceBusConnection")]
             ServiceBusReceivedMessage message
         )
         {

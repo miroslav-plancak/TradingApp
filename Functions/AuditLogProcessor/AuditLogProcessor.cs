@@ -16,7 +16,8 @@ namespace AuditLogProcessor
         }
 
         [Function(nameof(AuditLogProcessor))]
-        public async Task Run(
+        public async Task Run
+        (
             [ServiceBusTrigger(
             "order_events_topic", 
             "audit-log", 

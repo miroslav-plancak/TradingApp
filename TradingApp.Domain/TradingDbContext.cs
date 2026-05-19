@@ -3,6 +3,7 @@ using TradingApp.Domain.Models.Entities;
 using TradingApp.Domain.Models.Entities.Order;
 using TradingApp.Domain.Models.Entities.OutboxMessage;
 using TradingApp.Domain.Models.Entities.QuarantinedOutboxMessage;
+using TradingApp.Domain.Models.Entities.UnpublishedTopicMessages;
 using TradingApp.Domain.Models.Enums;
 
 namespace TradingApp.Domain
@@ -14,6 +15,7 @@ namespace TradingApp.Domain
         public DbSet<OutboxMessage> OutboxMessages {get; set; }
         public DbSet<DeadLetterLog> DeadLetterLogs { get; set;}
         public DbSet<QuarantinedOutboxMessage> QuarantinedOutboxMessages { get; set; }
+        public DbSet<UnpublishedTopicMessage> UnpublishedTopicMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -84,6 +86,21 @@ namespace TradingApp.Domain
                 entity.Property(e => e.DiscardedAt);
                 entity.Property(e => e.DiscardedBy).HasMaxLength(200);
                 entity.Property(e => e.ResolutionNotes).HasMaxLength(2000);
+            });
+
+            modelBuilder.Entity<UnpublishedTopicMessage>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => e.ClientOrderId);
+                entity.Property(e => e.ClientOrderId);
+
+                entity.Property(e => e.OrderStatus).IsRequired();
+                entity.Property(e => e.ProcessedAt).IsRequired();
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.PublishedAt);
+                entity.Property(e => e.RetryCount).IsRequired();
+                entity.Property(e => e.LastError);
             });
         }
     }

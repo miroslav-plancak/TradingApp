@@ -16,7 +16,8 @@ namespace RiskAnalysisProcessor
         }
 
         [Function(nameof(RiskAnalysisProcessor))]
-        public async Task Run(
+        public async Task Run
+        (
             [ServiceBusTrigger(
             "order_events_topic",
             "risk-analysis", 

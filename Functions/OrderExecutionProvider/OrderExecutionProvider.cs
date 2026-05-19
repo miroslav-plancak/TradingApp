@@ -1,9 +1,11 @@
 using Azure.Messaging.ServiceBus;
+using Grpc.Core;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TradingApp.Domain;
+using TradingApp.Domain.Models.Entities.UnpublishedTopicMessages;
 using TradingApp.Domain.Models.Enums;
 using TradingApp.Events.Events;
 using TradingApp.Events.Payloads;
@@ -70,7 +72,6 @@ namespace OrderExecutionProvider
 
             _logger.LogInformation("Order processed successfully: {Id}", payload.ClientOrderId);
 
-            //TODO:: devise a way to handle the case when ServiceBusClient for this topic is down and publishing is lost here.
             await PublishOrderProcessedEvent(payload.ClientOrderId, randomStatus);
         }
 
@@ -78,7 +79,7 @@ namespace OrderExecutionProvider
         {
             try
             {
-                var sender = _serviceBusClient.CreateSender("order_events_topic");
+                var sender = _serviceBusClient.CreateSender("order_events_topic123");
 
                 var eventPayload = new OrderProcessedEvent
                 {
@@ -99,6 +100,23 @@ namespace OrderExecutionProvider
                 _logger.LogInformation(
                   "Published OrderProcessed event to topic for ClientOrderId: {ClientOrderId}",
                   clientOrderId);
+            }
+            catch (ServiceBusException serviceBusException)
+            {
+                _logger.LogError(serviceBusException,
+                    "Topic publish failed for: {ClientOrderId} - adding entry to UnpublishedTopicMessages.",
+                    clientOrderId);
+
+                _tradingDbContext.UnpublishedTopicMessages.Add(new UnpublishedTopicMessage
+                {
+                    Id = Guid.NewGuid(),
+                    ClientOrderId = clientOrderId,
+                    OrderStatus = randomStatus,
+                    ProcessedAt = DateTimeOffset.UtcNow,
+                    CreatedAt = DateTimeOffset.UtcNow
+                });
+
+                await _tradingDbContext.SaveChangesAsync();
             }
             catch (Exception ex) 
             {
