@@ -9,14 +9,38 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* =====================================================
-           THEME SYSTEM — 5 themes selectable from top-right
+           THEME SYSTEM — 6 themes selectable from top-right
            To change the DEFAULT theme: edit the `DEFAULT_THEME`
            constant in the <script> section near the bottom.
-           Themes: terminal | bloomberg | arctic | solar | ledger
+           Themes: slate (default) | terminal | bloomberg | arctic | solar | ledger
            ===================================================== */
         :root,
+        [data-theme="slate"] {
+            /* Theme 1: SLATE — balanced midtone, soft and professional (DEFAULT) */
+            --bg-0: #1c2129;
+            --bg-1: #252b36;
+            --bg-2: #2f3641;
+            --bg-3: #3a424f;
+            --border: #444d5c;
+            --border-bright: #5a6473;
+            --text-0: #e8ebf0;
+            --text-1: #b8c0cc;
+            --text-2: #8993a3;
+            --text-3: #5c6675;
+            --accent: #5dd5c4;
+            --accent-dim: #3ba898;
+            --green: #4ade80;
+            --green-dim: #16a34a;
+            --red: #f87171;
+            --red-dim: #dc2626;
+            --blue: #60a5fa;
+            --blue-dim: #2563eb;
+            --grid-line: rgba(255,255,255,0.02);
+            --ambient-1: rgba(93, 213, 196, 0.05);
+            --ambient-2: rgba(96, 165, 250, 0.04);
+        }
         [data-theme="terminal"] {
-            /* Theme 1: TERMINAL — original deep dark navy/amber (default) */
+            /* Theme 2: TERMINAL — original deep dark navy/amber */
             --bg-0: #0a0e14;
             --bg-1: #11161e;
             --bg-2: #161c26;
@@ -40,7 +64,7 @@
             --ambient-2: rgba(79, 179, 255, 0.03);
         }
         [data-theme="bloomberg"] {
-            /* Theme 2: BLOOMBERG — classic dark with orange terminal glow */
+            /* Theme 3: BLOOMBERG — classic dark with orange terminal glow */
             --bg-0: #1a1a1a;
             --bg-1: #232323;
             --bg-2: #2a2a2a;
@@ -64,7 +88,7 @@
             --ambient-2: rgba(255, 51, 51, 0.02);
         }
         [data-theme="arctic"] {
-            /* Theme 3: ARCTIC — bright, cool, light theme */
+            /* Theme 4: ARCTIC — bright, cool, light theme */
             --bg-0: #f5f7fa;
             --bg-1: #ffffff;
             --bg-2: #eef1f5;
@@ -88,7 +112,7 @@
             --ambient-2: rgba(0, 135, 90, 0.03);
         }
         [data-theme="solar"] {
-            /* Theme 4: SOLAR — warm cream/sepia, soft & comfortable */
+            /* Theme 5: SOLAR — warm cream/sepia, soft & comfortable */
             --bg-0: #faf6ed;
             --bg-1: #fdfaf2;
             --bg-2: #f2ebd9;
@@ -112,7 +136,7 @@
             --ambient-2: rgba(92, 138, 47, 0.03);
         }
         [data-theme="ledger"] {
-            /* Theme 5: LEDGER — paper-white, accountant ledger style */
+            /* Theme 6: LEDGER — paper-white, accountant ledger style */
             --bg-0: #ffffff;
             --bg-1: #fafafa;
             --bg-2: #f0f0f0;
@@ -140,6 +164,7 @@
             --display: 'Bebas Neue', 'Impact', sans-serif;
             --sans: 'Inter', -apple-system, sans-serif;
         }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             background: var(--bg-0);
@@ -182,7 +207,6 @@
         .topbar {
             background: var(--bg-1);
             border-bottom: 1px solid var(--border);
-            padding: 0;
         }
         .topbar-inner {
             max-width: 1600px;
@@ -193,11 +217,7 @@
             gap: 24px;
             flex-wrap: wrap;
         }
-        .brand {
-            display: flex;
-            align-items: baseline;
-            gap: 14px;
-        }
+        .brand { display: flex; align-items: baseline; gap: 14px; }
         .brand-mark {
             font-family: var(--display);
             font-size: 28px;
@@ -246,7 +266,6 @@
             gap: 8px;
             background: var(--bg-2);
             border: 1px solid var(--border);
-            border-radius: 0;
             padding: 6px 10px;
             font-family: var(--mono);
             font-size: 11px;
@@ -260,12 +279,9 @@
             min-width: 280px;
             outline: none;
         }
-        .endpoint-bar .label {
-            color: var(--text-2);
-            font-weight: 500;
-        }
+        .endpoint-bar .label { color: var(--text-2); font-weight: 500; }
 
-        /* ================= TICKER BAR ================= */
+        /* ================= TICKER ================= */
         .ticker {
             background: var(--bg-2);
             border-bottom: 1px solid var(--border);
@@ -285,7 +301,6 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
-            position: relative;
         }
         .ticker-cell:last-child { border-right: none; }
         .ticker-label {
@@ -304,10 +319,10 @@
             line-height: 1.1;
             letter-spacing: -0.02em;
         }
-        .ticker-value.accent { color: var(--accent); }
         .ticker-value.green { color: var(--green); }
         .ticker-value.red { color: var(--red); }
         .ticker-value.blue { color: var(--blue); }
+        .ticker-value.amber { color: var(--accent); }
         .ticker-trend {
             font-family: var(--mono);
             font-size: 10px;
@@ -341,14 +356,8 @@
             position: relative;
             transition: all 0.15s;
         }
-        .tab:hover {
-            color: var(--text-0);
-            background: var(--bg-2);
-        }
-        .tab.active {
-            color: var(--accent);
-            background: var(--bg-0);
-        }
+        .tab:hover { color: var(--text-0); background: var(--bg-2); }
+        .tab.active { color: var(--accent); background: var(--bg-0); }
         .tab.active::after {
             content: '';
             position: absolute;
@@ -374,7 +383,7 @@
         .grid-2 { grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); }
         .grid-3 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
 
-        /* ================= PANEL (Card) ================= */
+        /* ================= PANEL ================= */
         .panel {
             background: var(--bg-1);
             border: 1px solid var(--border);
@@ -400,17 +409,14 @@
             text-transform: uppercase;
             letter-spacing: 0.15em;
         }
-        .panel-title-icon {
-            color: var(--accent);
-            font-size: 14px;
-        }
+        .panel-title-icon { color: var(--accent); font-size: 14px; }
         .panel-subtitle {
             font-family: var(--mono);
             font-size: 10px;
             color: var(--text-2);
             padding: 8px 18px;
             border-bottom: 1px solid var(--border);
-            background: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.15);
         }
         .panel-body { padding: 18px; }
 
@@ -443,10 +449,7 @@
         .field input:focus, .field textarea:focus, .field select:focus {
             border-color: var(--accent);
         }
-        .field textarea {
-            min-height: 64px;
-            resize: vertical;
-        }
+        .field textarea { min-height: 64px; resize: vertical; }
 
         /* ================= BUTTONS ================= */
         .btn {
@@ -465,14 +468,10 @@
             align-items: center;
             gap: 6px;
         }
-        .btn:hover {
-            background: var(--bg-2);
-            border-color: var(--accent);
-            color: var(--accent);
-        }
+        .btn:hover { background: var(--bg-2); border-color: var(--accent); color: var(--accent); }
         .btn:active { transform: translateY(1px); }
         .btn-primary { background: var(--accent); color: var(--bg-0); border-color: var(--accent); }
-        .btn-primary:hover { background: #ffc847; border-color: #ffc847; color: var(--bg-0); }
+        .btn-primary:hover { background: var(--accent-dim); border-color: var(--accent-dim); color: var(--bg-0); }
         .btn-success { background: var(--green-dim); color: var(--text-0); border-color: var(--green-dim); }
         .btn-success:hover { background: var(--green); border-color: var(--green); color: var(--bg-0); }
         .btn-danger { background: var(--red-dim); color: var(--text-0); border-color: var(--red-dim); }
@@ -483,7 +482,7 @@
         .btn-sm { padding: 5px 10px; font-size: 10px; letter-spacing: 0.08em; }
         .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
 
-        /* ================= STATS / METRICS ================= */
+        /* ================= METRICS ================= */
         .metric-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -519,7 +518,7 @@
         .metric-value.amber { color: var(--accent); }
         .metric-value.blue { color: var(--blue); }
 
-        /* ================= TERMINAL OUTPUT ================= */
+        /* ================= TERMINAL ================= */
         .terminal {
             background: var(--bg-0);
             border: 1px solid var(--border);
@@ -536,9 +535,8 @@
             position: relative;
         }
         [data-theme="terminal"] .terminal,
-        [data-theme="bloomberg"] .terminal {
-            background: #050810;
-        }
+        [data-theme="bloomberg"] .terminal { background: #050810; }
+        [data-theme="slate"] .terminal { background: #161a22; }
         .terminal::before {
             content: '$ ';
             color: var(--green);
@@ -546,7 +544,7 @@
         }
         .terminal.no-prefix::before { content: ''; }
 
-        /* ================= LIST / ITEMS ================= */
+        /* ================= LIST ================= */
         .list {
             background: var(--bg-0);
             border: 1px solid var(--border);
@@ -607,46 +605,45 @@
             text-transform: uppercase;
             letter-spacing: 0.12em;
             border: 1px solid;
-            border-radius: 0;
         }
         .badge-pending, .badge-unprocessed {
-            background: rgba(255, 176, 32, 0.1);
+            background: rgba(93, 213, 196, 0.12);
             color: var(--accent);
             border-color: var(--accent-dim);
         }
         .badge-acknowledged, .badge-processed {
-            background: rgba(0, 214, 143, 0.1);
+            background: rgba(74, 222, 128, 0.12);
             color: var(--green);
             border-color: var(--green-dim);
         }
         .badge-rejected, .badge-unresolved {
-            background: rgba(255, 71, 87, 0.1);
+            background: rgba(248, 113, 113, 0.12);
             color: var(--red);
             border-color: var(--red-dim);
         }
         .badge-filled {
-            background: rgba(79, 179, 255, 0.1);
+            background: rgba(96, 165, 250, 0.12);
             color: var(--blue);
             border-color: var(--blue-dim);
         }
         .badge-resolved {
-            background: rgba(107, 122, 145, 0.1);
+            background: rgba(107, 122, 145, 0.12);
             color: var(--text-1);
             border-color: var(--text-3);
         }
 
-        /* ================= INFO BOXES ================= */
+        /* ================= NOTES ================= */
         .note {
             border-left: 3px solid var(--blue);
-            background: rgba(79, 179, 255, 0.04);
+            background: rgba(96, 165, 250, 0.06);
             padding: 12px 14px;
             margin-top: 12px;
             font-size: 12px;
             color: var(--text-1);
             line-height: 1.6;
         }
-        .note.warn { border-color: var(--accent); background: rgba(255, 176, 32, 0.04); }
-        .note.danger { border-color: var(--red); background: rgba(255, 71, 87, 0.04); }
+        .note.warn { border-color: var(--accent); background: rgba(93, 213, 196, 0.06); }
+        .note.danger { border-color: var(--red); background: rgba(248, 113, 113, 0.06); }
         .note h4 {
             font-family: var(--mono);
             font-size: 11px;
@@ -667,26 +664,9 @@
             color: var(--accent);
         }
 
-        /* ================= STATUS LINE ================= */
-        .status-line {
-            font-family: var(--mono);
-            font-size: 11px;
-            color: var(--text-2);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .small {
-            font-family: var(--mono);
-            font-size: 11px;
-            color: var(--text-2);
-        }
+        .small { font-family: var(--mono); font-size: 11px; color: var(--text-2); }
 
-        details {
-            margin-top: 8px;
-            font-family: var(--mono);
-            font-size: 11px;
-        }
+        details { margin-top: 8px; font-family: var(--mono); font-size: 11px; }
         details summary {
             cursor: pointer;
             color: var(--text-2);
@@ -707,7 +687,6 @@
             max-height: 200px;
         }
 
-        /* ================= TABLE-LIKE LAYOUT ================= */
         .kv {
             font-family: var(--mono);
             font-size: 11px;
@@ -716,22 +695,22 @@
             gap: 4px 12px;
             margin-top: 6px;
         }
-        .kv .k { color: var(--text-2); text-transform: uppercase; letter-spacing: 0.08em; font-size: 9px; padding-top: 2px; }
+        .kv .k {
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 9px;
+            padding-top: 2px;
+        }
         .kv .v { color: var(--text-0); word-break: break-all; }
 
-        /* ================= SCROLLBAR ================= */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-1); }
         ::-webkit-scrollbar-thumb { background: var(--border-bright); }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
-        /* ================= MISC ================= */
         .full-width { grid-column: 1 / -1; }
-        .divider {
-            height: 1px;
-            background: var(--border);
-            margin: 16px 0;
-        }
+        .divider { height: 1px; background: var(--border); margin: 16px 0; }
         .section-title {
             font-family: var(--mono);
             font-size: 10px;
@@ -743,6 +722,7 @@
             padding-bottom: 6px;
             border-bottom: 1px solid var(--border);
         }
+
         @media (max-width: 768px) {
             .ticker-inner { grid-template-columns: repeat(2, 1fr); }
             .ticker-cell { border-right: none; border-bottom: 1px solid var(--border); }
@@ -750,10 +730,7 @@
         }
 
         /* ================= THEME SELECTOR ================= */
-        .theme-selector {
-            position: relative;
-            font-family: var(--mono);
-        }
+        .theme-selector { position: relative; font-family: var(--mono); }
         .theme-trigger {
             background: var(--bg-2);
             border: 1px solid var(--border);
@@ -769,10 +746,7 @@
             gap: 8px;
             transition: all 0.15s;
         }
-        .theme-trigger:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
+        .theme-trigger:hover { border-color: var(--accent); color: var(--accent); }
         .theme-swatch {
             width: 12px; height: 12px;
             background: var(--accent);
@@ -784,7 +758,7 @@
             right: 0;
             background: var(--bg-1);
             border: 1px solid var(--border-bright);
-            min-width: 200px;
+            min-width: 220px;
             z-index: 100;
             display: none;
             box-shadow: 0 8px 24px rgba(0,0,0,0.4);
@@ -807,19 +781,12 @@
         .theme-option:last-child { border-bottom: none; }
         .theme-option:hover { background: var(--bg-2); color: var(--text-0); }
         .theme-option.active { color: var(--accent); }
-        .theme-option .swatches {
-            display: flex;
-            gap: 2px;
-        }
+        .theme-option .swatches { display: flex; gap: 2px; }
         .theme-option .swatch {
             width: 10px; height: 18px;
             border: 1px solid rgba(0,0,0,0.2);
         }
-        .theme-option .label-row {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-        }
+        .theme-option .label-row { display: flex; flex-direction: column; gap: 1px; }
         .theme-option .label-sub {
             font-size: 9px;
             color: var(--text-3);
@@ -862,17 +829,103 @@
             color: var(--bg-0);
             border-color: var(--red);
         }
+
+        /* ================= ARCHITECTURE DIAGRAM ================= */
+        .arch-diagram {
+            background: var(--bg-0);
+            border: 1px solid var(--border);
+            padding: 24px;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 14px;
+            position: relative;
+        }
+        .arch-node {
+            background: var(--bg-2);
+            border: 1px solid var(--border-bright);
+            padding: 10px 12px;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-0);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .arch-node .arch-kind {
+            font-size: 8px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-weight: 600;
+        }
+        .arch-node .arch-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-0);
+            line-height: 1.2;
+        }
+        .arch-node .arch-detail {
+            font-size: 10px;
+            color: var(--text-2);
+            line-height: 1.4;
+        }
+        .arch-node.api { border-left: 3px solid var(--blue); }
+        .arch-node.queue { border-left: 3px solid var(--accent); background: rgba(93, 213, 196, 0.04); }
+        .arch-node.topic { border-left: 3px solid var(--blue); background: rgba(96, 165, 250, 0.04); }
+        .arch-node.func { border-left: 3px solid var(--green); }
+        .arch-node.timer { border-left: 3px solid var(--accent); }
+        .arch-node.db { border-left: 3px solid var(--text-2); background: var(--bg-3); }
+        .arch-node.consumer { border-left: 3px solid var(--green); background: rgba(74, 222, 128, 0.04); }
+        .arch-node.error { border-left: 3px solid var(--red); background: rgba(248, 113, 113, 0.04); }
+        .arch-row { display: contents; }
+        .arch-arrow {
+            font-family: var(--mono);
+            color: var(--text-2);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4px;
+        }
+        .arch-arrow.dashed { color: var(--red); }
+        .arch-legend {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            padding: 14px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+        }
+        .arch-legend-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-1);
+            line-height: 1.4;
+        }
+        .arch-legend-dot {
+            width: 12px; height: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
 <div class="app">
+    <!-- ============= TOAST CONTAINER ============= -->
+    <div id="toastContainer" style="position:fixed; top:20px; right:20px; z-index:1000; display:flex; flex-direction:column; gap:8px; pointer-events:none;"></div>
 
     <!-- ============= TOP BAR ============= -->
     <header class="topbar">
         <div class="topbar-inner">
             <div class="brand">
                 <div class="brand-mark">TRADING<span class="dot">.</span>OPS</div>
-                <div class="brand-tag">Event-Driven Order Pipeline // v2.0</div>
+                <div class="brand-tag">Event-Driven Order Pipeline // v3.0</div>
             </div>
             <div class="endpoint-bar">
                 <span class="label">API://</span>
@@ -880,7 +933,6 @@
             </div>
             <button class="btn btn-ghost btn-sm" onclick="refreshAllStats(true)">↻ Refresh</button>
 
-            <!-- PURGE ZONE -->
             <div class="purge-zone">
                 <div class="purge-summary">
                     <span id="purgeSumOrders">ORD <b>—</b></span>
@@ -895,7 +947,6 @@
                 <span id="connStatus">CONNECTING...</span>
             </div>
 
-            <!-- THEME SELECTOR -->
             <div class="theme-selector">
                 <button class="theme-trigger" onclick="toggleThemeMenu()" id="themeTrigger">
                     <span class="theme-swatch" id="themeSwatch"></span>
@@ -903,6 +954,17 @@
                     <span style="opacity:0.5">▾</span>
                 </button>
                 <div class="theme-menu" id="themeMenu">
+                    <div class="theme-option" data-theme="slate" onclick="setTheme('slate')">
+                        <div class="swatches">
+                            <div class="swatch" style="background:#1c2129"></div>
+                            <div class="swatch" style="background:#5dd5c4"></div>
+                            <div class="swatch" style="background:#4ade80"></div>
+                        </div>
+                        <div class="label-row">
+                            <span>Slate</span>
+                            <span class="label-sub">balanced midtone · soft</span>
+                        </div>
+                    </div>
                     <div class="theme-option" data-theme="terminal" onclick="setTheme('terminal')">
                         <div class="swatches">
                             <div class="swatch" style="background:#0a0e14"></div>
@@ -963,7 +1025,7 @@
         </div>
     </header>
 
-    <!-- ============= GLOBAL TICKER ============= -->
+    <!-- ============= TICKER ============= -->
     <div class="ticker">
         <div class="ticker-inner">
             <div class="ticker-cell">
@@ -1015,7 +1077,6 @@
         <!-- ===================== ORDERS TAB ===================== -->
         <div class="tab-content active" id="tab-orders">
             <div class="grid grid-2">
-
                 <div class="panel">
                     <div class="panel-header">
                         <div class="panel-title"><span class="panel-title-icon">▶</span>Submit Single Order</div>
@@ -1117,7 +1178,6 @@
                         <div class="terminal no-prefix" id="orderByIdResponse" style="margin-top:14px;">// awaiting lookup...</div>
                     </div>
                 </div>
-
             </div>
         </div>
 
@@ -1173,13 +1233,11 @@
                     </div>
                     <div class="panel-body">
                         <div class="note">
-                            <h4>Transactional Outbox Pattern</h4>
+                            <h4>Three-Phase Processor</h4>
                             <ul>
-                                <li>Order create writes BOTH <code>Order</code> and <code>OutboxMessage</code> in one DB transaction.</li>
-                                <li><code>ScheduledOutboxMessageProcessor</code> polls for <code>ProcessedAt = null</code> rows.</li>
-                                <li>Publishes the payload to <code>CREATE_ORDER_QUEUE</code> Service Bus queue.</li>
-                                <li>Sets <code>ProcessedAt</code> on success. Increments <code>RetryCount</code> on failure.</li>
-                                <li>Guarantees no message is published without persisting state first.</li>
+                                <li><b>Quarantine</b> — messages with <code>RetryCount &gt;= 5</code> are moved to <code>QuarantinedOutboxMessages</code>.</li>
+                                <li><b>Dispatch</b> — pending messages are batch-published to <code>create_order_queue</code> with classified retry reasons.</li>
+                                <li><b>Auto-recover</b> — once Service Bus proves healthy, transient-failure quarantined messages are resurrected for one more attempt.</li>
                             </ul>
                         </div>
                     </div>
@@ -1280,15 +1338,13 @@
         <!-- ===================== SCENARIOS TAB ===================== -->
         <div class="tab-content" id="tab-scenarios">
             <div class="grid grid-2">
-
-                <!-- SCENARIO 1: Full Lifecycle -->
                 <div class="panel">
                     <div class="panel-header">
                         <div class="panel-title"><span class="panel-title-icon">①</span>Full Order Lifecycle</div>
                         <span class="small">PENDING → ACK → FILLED</span>
                     </div>
                     <div class="panel-body">
-                        <p class="small" style="margin-bottom:12px;">Submits orders, watches them traverse the entire state machine: <code style="color:var(--accent)">PENDING_ACK</code> → <code style="color:var(--blue)">ACKNOWLEDGED</code> → <code style="color:var(--green)">FILLED</code>. Validates API → DB → Outbox → Service Bus → Consumer → Status Update pipeline.</p>
+                        <p class="small" style="margin-bottom:12px;">Submits orders and watches the state machine: <code style="color:var(--accent)">PENDING_ACK</code> → <code style="color:var(--blue)">ACKNOWLEDGED</code> → <code style="color:var(--green)">FILLED</code>. Validates API → DB → Outbox → Service Bus → Consumer → Status Update.</p>
                         <div class="form-row">
                             <div class="field">
                                 <label>Order Count</label>
@@ -1304,14 +1360,13 @@
                     </div>
                 </div>
 
-                <!-- SCENARIO 2: Pub-Sub Fan-Out -->
                 <div class="panel">
                     <div class="panel-header">
                         <div class="panel-title"><span class="panel-title-icon">②</span>Pub-Sub Fan-Out</div>
                         <span class="small">Topic broadcast verification</span>
                     </div>
                     <div class="panel-body">
-                        <p class="small" style="margin-bottom:12px;">Submits orders and measures the fan-out delay across <code style="color:var(--accent)">order_events_topic</code>. Each successful order should trigger <strong>3 independent subscribers</strong> (Risk Analysis, Notifications, Audit Log). Watch the function consoles to confirm each fires per event.</p>
+                        <p class="small" style="margin-bottom:12px;">Submits orders and verifies fan-out across <code style="color:var(--accent)">order_events_topic</code>. Each processed order triggers <strong>3 subscribers</strong> (Risk, Notifications, Audit).</p>
                         <div class="form-row">
                             <div class="field">
                                 <label>Order Count</label>
@@ -1327,14 +1382,13 @@
                     </div>
                 </div>
 
-                <!-- SCENARIO 3: Throughput Benchmark -->
                 <div class="panel">
                     <div class="panel-header">
                         <div class="panel-title"><span class="panel-title-icon">③</span>Throughput Benchmark</div>
                         <span class="small">P50/P95/P99 latency</span>
                     </div>
                     <div class="panel-body">
-                        <p class="small" style="margin-bottom:12px;">Fires N parallel requests, samples end-to-end latency (CreatedAt → UpdatedAt) once orders are processed. Reports P50, P95, P99 percentiles. Useful for spotting backpressure and Service Bus throttling.</p>
+                        <p class="small" style="margin-bottom:12px;">Fires N parallel requests, samples end-to-end latency (CreatedAt → UpdatedAt). Reports percentiles for backpressure analysis.</p>
                         <div class="form-row">
                             <div class="field">
                                 <label>Parallel Orders</label>
@@ -1350,14 +1404,13 @@
                     </div>
                 </div>
 
-                <!-- SCENARIO 4: Outbox Drain -->
                 <div class="panel">
                     <div class="panel-header">
                         <div class="panel-title"><span class="panel-title-icon">④</span>Outbox Drain Test</div>
                         <span class="small">Backlog processing rate</span>
                     </div>
                     <div class="panel-body">
-                        <p class="small" style="margin-bottom:12px;">Creates a backlog of orders, then polls outbox stats until all messages are dispatched to Service Bus. Measures drain rate of the <code style="color:var(--accent)">ScheduledOutboxMessageProcessor</code>. Useful to verify after pausing the dispatcher function.</p>
+                        <p class="small" style="margin-bottom:12px;">Creates a backlog, polls outbox stats until drained. Measures the drain rate of <code style="color:var(--accent)">ScheduledOutboxMessageProcessor</code>.</p>
                         <div class="form-row">
                             <div class="field">
                                 <label>Order Count</label>
@@ -1373,14 +1426,13 @@
                     </div>
                 </div>
 
-                <!-- SCENARIO 5: Idempotency Probe -->
                 <div class="panel">
                     <div class="panel-header">
                         <div class="panel-title"><span class="panel-title-icon">⑤</span>Idempotency Probe</div>
                         <span class="small">Atomic UPDATE verification</span>
                     </div>
                     <div class="panel-body">
-                        <p class="small" style="margin-bottom:12px;">Creates an order and inspects it in rapid succession to verify the atomic <code style="color:var(--accent)">ExecuteUpdateAsync</code> with <code style="color:var(--accent)">WHERE IsProcessed = 0</code> clause prevents double-processing. Run with multiple consumer instances active to truly stress the race condition.</p>
+                        <p class="small" style="margin-bottom:12px;">Verifies the atomic <code style="color:var(--accent)">ExecuteUpdateAsync</code> with <code style="color:var(--accent)">WHERE IsProcessed = 0</code> prevents double-processing.</p>
                         <div class="form-row">
                             <div class="field">
                                 <label>Probe Count</label>
@@ -1396,20 +1448,18 @@
                     </div>
                 </div>
 
-                <!-- SCENARIO 6: Dead Letter Roundtrip -->
                 <div class="panel">
                     <div class="panel-header">
                         <div class="panel-title"><span class="panel-title-icon">⑥</span>Dead Letter Roundtrip</div>
                         <span class="small">DLQ API surface validation</span>
                     </div>
                     <div class="panel-body">
-                        <p class="small" style="margin-bottom:12px;">Injects a synthetic dead letter, fetches by Client Order ID, then resolves it via the resolve endpoint. Validates the DL controller end-to-end without needing to engineer a real poison message.</p>
+                        <p class="small" style="margin-bottom:12px;">Injects a synthetic dead letter, fetches by Client Order ID, then resolves it. Validates the DL controller end-to-end.</p>
                         <button class="btn btn-primary" onclick="scenarioDeadLetterRoundTrip()">▶ Run Scenario</button>
                         <div class="terminal no-prefix" id="scDlOut" style="margin-top:12px;">idle.</div>
                     </div>
                 </div>
 
-                <!-- MANUAL SCENARIOS -->
                 <div class="panel full-width">
                     <div class="panel-header">
                         <div class="panel-title"><span class="panel-title-icon">⚠</span>Manual Chaos Scenarios</div>
@@ -1422,15 +1472,24 @@
                                 <ul>
                                     <li>Stop SQL Server → POST <code>/api/order</code>.</li>
                                     <li>Expect <code>500</code> with NO orphaned rows.</li>
-                                    <li>Verify Orders & OutboxMessages counts unchanged (transaction rollback).</li>
+                                    <li>Verify Orders &amp; OutboxMessages unchanged (transaction rollback).</li>
                                 </ul>
                             </div>
                             <div class="note warn">
-                                <h4>Service Bus Down</h4>
+                                <h4>Service Bus Down (Queue)</h4>
                                 <ul>
-                                    <li>Disable the queue in Azure portal → submit orders.</li>
-                                    <li>Orders persist; OutboxMessages remain unprocessed; <code>RetryCount</code> climbs.</li>
-                                    <li>Re-enable → dispatcher catches up; rows flip processed.</li>
+                                    <li>Disable queue → submit orders.</li>
+                                    <li>OutboxMessages remain unprocessed; <code>RetryCount</code> climbs.</li>
+                                    <li>After 5 retries → moved to <code>QuarantinedOutboxMessages</code>.</li>
+                                    <li>Re-enable → auto-resurrection kicks in.</li>
+                                </ul>
+                            </div>
+                            <div class="note danger">
+                                <h4>Service Bus Down (Topic)</h4>
+                                <ul>
+                                    <li>Disable topic on Azure → process orders.</li>
+                                    <li><code>OrderExecutionProvider</code> catches the exception, writes to <code>UnpublishedTopicMessages</code>.</li>
+                                    <li><code>ScheduledUnpublishedTopicMessagesProcessor</code> retries publishing directly.</li>
                                 </ul>
                             </div>
                             <div class="note warn">
@@ -1438,32 +1497,23 @@
                                 <ul>
                                     <li>Kill <code>OrderExecutionProvider</code> during a burst.</li>
                                     <li>Service Bus redelivers; atomic <code>WHERE IsProcessed=0</code> prevents duplicate updates.</li>
-                                    <li>Restart consumer — orders reach ACK/FILLED with no duplicates.</li>
+                                    <li>Restart consumer — backlog drains cleanly.</li>
                                 </ul>
                             </div>
                             <div class="note danger">
                                 <h4>Poison Message → DLQ</h4>
                                 <ul>
-                                    <li>Force consumer to always throw on a specific ClientOrderId.</li>
-                                    <li>After max delivery count, Service Bus moves it to DLQ.</li>
-                                    <li><code>DeadLetterQueueProcessor</code> writes to <strong>DeadLetterLogs</strong> table.</li>
-                                    <li>Triage in the Dead Letter tab; resolve with operator notes.</li>
-                                </ul>
-                            </div>
-                            <div class="note">
-                                <h4>Multi-Consumer Race</h4>
-                                <ul>
-                                    <li>Run the function host on two machines pointed at same Service Bus.</li>
-                                    <li>Both compete for messages (queue) but receive copies (topic subscriptions).</li>
-                                    <li>Atomic UPDATE guarantees only one wins for any given order.</li>
-                                    <li>Loser logs: <em>"already processed by another instance"</em>.</li>
+                                    <li>Force consumer to throw on a specific ClientOrderId.</li>
+                                    <li>After max delivery count, message goes to DLQ.</li>
+                                    <li><code>DeadLetterQueueProcessor</code> writes to <strong>DeadLetterLogs</strong>.</li>
+                                    <li>Triage in the Dead Letter tab.</li>
                                 </ul>
                             </div>
                             <div class="note">
                                 <h4>Subscriber Isolation</h4>
                                 <ul>
                                     <li>Kill ONE topic subscriber (e.g., AuditLogProcessor).</li>
-                                    <li>Other subscribers (Risk, Notification) keep receiving events.</li>
+                                    <li>Other subscribers keep receiving events.</li>
                                     <li>Audit subscription queue accumulates messages.</li>
                                     <li>Restart subscriber — backlog drains. Pub/sub decoupling proven.</li>
                                 </ul>
@@ -1471,7 +1521,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
 
@@ -1479,83 +1528,158 @@
         <div class="tab-content" id="tab-architecture">
             <div class="panel">
                 <div class="panel-header">
-                    <div class="panel-title"><span class="panel-title-icon">◆</span>System Architecture</div>
+                    <div class="panel-title"><span class="panel-title-icon">◆</span>System Architecture // v3.0</div>
+                    <span class="small">Event-driven order pipeline</span>
                 </div>
                 <div class="panel-body">
-                    <div class="terminal no-prefix" style="line-height:1.4; font-size:11px;">
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                    EVENT-DRIVEN ORDER PIPELINE // v2.0                       │
-└──────────────────────────────────────────────────────────────────────────────┘
 
-    [Web UI] ──HTTP──▶ [TradingApp.API]
-                            │
-                            │  BeginTransaction
-                            ▼
-                       ┌─────────┐         ┌────────────────────┐
-                       │ Orders  │         │   OutboxMessages   │
-                       │ (PENDING_ACK)│    │  (ProcessedAt=null)│
-                       └─────────┘         └─────────┬──────────┘
-                                                     │
-                                                     │  every 1 min
-                                                     ▼
-                                    [ScheduledOutboxMessageProcessor]
-                                                     │
-                                                     │  publish
-                                                     ▼
-                                  ┌─────────────────────────────────┐
-                                  │  Service Bus: CREATE_ORDER_QUEUE│
-                                  └─────────────────┬───────────────┘
-                                                    │
-                                                    ▼
-                                  [OrderExecutionProvider]
-                                  ├─ atomic UPDATE (idempotent)
-                                  ├─ assign ACKNOWLEDGED or REJECTED
-                                  └─ publish to topic ──┐
-                                                        ▼
-                                  ┌─────────────────────────────────┐
-                                  │  Service Bus: order_events_topic│
-                                  └──┬─────────────┬────────────┬───┘
-                                     │             │            │
-                                     ▼             ▼            ▼
-                          [RiskAnalysis]   [Notification] [AuditLog]
-                          (risk-analysis)   (notifications)(audit-log)
+                    <div class="arch-diagram">
+                        <!-- Row 1: API + DB -->
+                        <div class="arch-node api" style="grid-column: 1 / span 4;">
+                            <span class="arch-kind">[POST] /api/order</span>
+                            <span class="arch-name">TradingApp.API</span>
+                            <span class="arch-detail">CreateOrderAsync — atomic insert of Order + OutboxMessage via transaction.CommitAsync()</span>
+                        </div>
+                        <div class="arch-arrow" style="grid-column: 5 / span 1;">→</div>
+                        <div class="arch-node db" style="grid-column: 6 / span 7;">
+                            <span class="arch-kind">SQL Server</span>
+                            <span class="arch-name">DB · 5 Tables</span>
+                            <span class="arch-detail">Orders · OutboxMessages · QuarantinedOutboxMessages · UnpublishedTopicMessages · DeadLetterLogs</span>
+                        </div>
 
-                                            │ every 1 min, separately
-                                            ▼
-                                  [ScheduledOrderStatusProcessor]
-                                  └─ flips ACKNOWLEDGED → FILLED
+                        <!-- Row 2: Outbox processor -->
+                        <div class="arch-node timer" style="grid-column: 1 / span 5; margin-top: 8px;">
+                            <span class="arch-kind">[TimerTrigger] · every 1 min</span>
+                            <span class="arch-name">ScheduledOutboxMessageProcessor</span>
+                            <span class="arch-detail">3 phases: QuarantineExhaustedMessages() → ProcessPendingMessages() → AutoRecoverResurrectedMessages()</span>
+                        </div>
+                        <div class="arch-arrow" style="grid-column: 6 / span 1; margin-top: 8px;">→</div>
+                        <div class="arch-node queue" style="grid-column: 7 / span 6; margin-top: 8px;">
+                            <span class="arch-kind">[ServiceBusQueue]</span>
+                            <span class="arch-name">create_order_queue</span>
+                            <span class="arch-detail">Command pattern — competing consumers, exclusive message lock</span>
+                        </div>
 
-                              ┌──────────────────────────────────┐
-                              │  Service Bus DLQ (max delivery)  │
-                              └───────────────┬──────────────────┘
-                                              ▼
-                                  [DeadLetterQueueProcessor]
-                                  └─ writes DeadLetterLogs row
+                        <!-- Row 3: Consumer -->
+                        <div class="arch-arrow" style="grid-column: 7 / span 6;">↓ idempotent ExecuteUpdateAsync WHERE !IsProcessed</div>
+
+                        <div class="arch-node consumer" style="grid-column: 4 / span 5;">
+                            <span class="arch-kind">[ServiceBusTrigger]</span>
+                            <span class="arch-name">OrderExecutionProvider</span>
+                            <span class="arch-detail">Atomically updates order status (ACKNOWLEDGED/REJECTED), publishes OrderProcessed event to topic</span>
+                        </div>
+                        <div class="arch-arrow" style="grid-column: 9 / span 1;">→</div>
+                        <div class="arch-node topic" style="grid-column: 10 / span 3;">
+                            <span class="arch-kind">[ServiceBusTopic]</span>
+                            <span class="arch-name">order_events_topic</span>
+                            <span class="arch-detail">Fans out to all subscriptions</span>
+                        </div>
+
+                        <!-- Row 4: Error path - dashed -->
+                        <div class="arch-arrow dashed" style="grid-column: 4 / span 5;">↓ on ServiceBusException ⋯</div>
+
+                        <div class="arch-node error" style="grid-column: 1 / span 4;">
+                            <span class="arch-kind">[TimerTrigger] · every 1 min</span>
+                            <span class="arch-name">ScheduledUnpublishedTopicMessagesProcessor</span>
+                            <span class="arch-detail">Reads UnpublishedTopicMessages, retries publishing directly to topic (up to 5 attempts)</span>
+                        </div>
+                        <div class="arch-arrow dashed" style="grid-column: 5 / span 1;">⋯→</div>
+                        <div class="arch-node error" style="grid-column: 6 / span 3;">
+                            <span class="arch-kind">DB Fallback Table</span>
+                            <span class="arch-name">UnpublishedTopicMessages</span>
+                            <span class="arch-detail">Failed topic publishes — preserves exact OrderStatus from processing</span>
+                        </div>
+                        <div class="arch-arrow dashed" style="grid-column: 9 / span 1;">⋯→</div>
+                        <div class="arch-node topic" style="grid-column: 10 / span 3;">
+                            <span class="arch-kind">retry</span>
+                            <span class="arch-name">order_events_topic</span>
+                            <span class="arch-detail">Direct publish bypasses queue</span>
+                        </div>
+
+                        <!-- Row 5: Subscribers -->
+                        <div class="arch-arrow" style="grid-column: 10 / span 3;">↓ fan-out</div>
+
+                        <div class="arch-node func" style="grid-column: 1 / span 4;">
+                            <span class="arch-kind">[ServiceBusTrigger] · subscription: risk-analysis</span>
+                            <span class="arch-name">RiskAnalysisProcessor</span>
+                            <span class="arch-detail">Subscriber 1 — calculates risk score per processed order</span>
+                        </div>
+                        <div class="arch-node func" style="grid-column: 5 / span 4;">
+                            <span class="arch-kind">[ServiceBusTrigger] · subscription: notifications</span>
+                            <span class="arch-name">NotificationsProcessor</span>
+                            <span class="arch-detail">Subscriber 2 — sends notifications (email · teams · slack)</span>
+                        </div>
+                        <div class="arch-node func" style="grid-column: 9 / span 4;">
+                            <span class="arch-kind">[ServiceBusTrigger] · subscription: audit-log</span>
+                            <span class="arch-name">AuditLogProcessor</span>
+                            <span class="arch-detail">Subscriber 3 — writes immutable audit record</span>
+                        </div>
+
+                        <!-- Row 6: DLQ + Status -->
+                        <div class="arch-node error" style="grid-column: 1 / span 6; margin-top: 8px;">
+                            <span class="arch-kind">[ServiceBusTrigger] · create_order_queue/$DeadLetterQueue</span>
+                            <span class="arch-name">DeadLetterQueueProcessor</span>
+                            <span class="arch-detail">Consumes DLQ messages (max delivery exceeded), persists to DeadLetterLogs for operator triage</span>
+                        </div>
+                        <div class="arch-node timer" style="grid-column: 7 / span 6; margin-top: 8px;">
+                            <span class="arch-kind">[TimerTrigger] · every 1 min</span>
+                            <span class="arch-name">ScheduledOrderStatusProcessor</span>
+                            <span class="arch-detail">Flips orderStatus from ACKNOWLEDGED to FILLED on a timer</span>
+                        </div>
                     </div>
+
+                    <div class="arch-legend">
+                        <div class="arch-legend-item">
+                            <div class="arch-legend-dot" style="background: var(--blue);"></div>
+                            <div><b style="color:var(--text-0)">API entry</b> · the HTTP boundary where orders enter the system</div>
+                        </div>
+                        <div class="arch-legend-item">
+                            <div class="arch-legend-dot" style="background: var(--accent);"></div>
+                            <div><b style="color:var(--text-0)">Queue (command)</b> · exactly one consumer processes each message</div>
+                        </div>
+                        <div class="arch-legend-item">
+                            <div class="arch-legend-dot" style="background: var(--blue);"></div>
+                            <div><b style="color:var(--text-0)">Topic (event)</b> · fans out to all active subscriptions</div>
+                        </div>
+                        <div class="arch-legend-item">
+                            <div class="arch-legend-dot" style="background: var(--green);"></div>
+                            <div><b style="color:var(--text-0)">Consumer / Subscriber</b> · processes messages from a queue/subscription</div>
+                        </div>
+                        <div class="arch-legend-item">
+                            <div class="arch-legend-dot" style="background: var(--accent);"></div>
+                            <div><b style="color:var(--text-0)">Timer trigger</b> · periodic background workers (1 min cadence)</div>
+                        </div>
+                        <div class="arch-legend-item">
+                            <div class="arch-legend-dot" style="background: var(--red);"></div>
+                            <div><b style="color:var(--text-0)">Error path</b> · dashed arrows mark fallback flows triggered by exceptions</div>
+                        </div>
+                    </div>
+
                     <div class="divider"></div>
+
                     <div class="grid grid-3">
                         <div class="note">
-                            <h4>Queue Pattern (Commands)</h4>
+                            <h4>Outbox Pattern</h4>
                             <ul>
-                                <li><code>CREATE_ORDER_QUEUE</code> = command queue</li>
-                                <li>Competing consumers — message goes to <em>one</em> recipient</li>
-                                <li>Load-balanced order execution</li>
+                                <li>Order + OutboxMessage written in one DB transaction</li>
+                                <li>No message published without persisted state</li>
+                                <li>Dispatcher drains the outbox on a timer</li>
                             </ul>
                         </div>
                         <div class="note warn">
-                            <h4>Topic Pattern (Events)</h4>
+                            <h4>Topic Reliability</h4>
                             <ul>
-                                <li><code>order_events_topic</code> = event broadcast</li>
-                                <li>3 subscriptions: each gets its own copy</li>
-                                <li>Independent scaling, failure isolation</li>
+                                <li>If topic publish fails → persist to <code>UnpublishedTopicMessages</code></li>
+                                <li>Dedicated retry processor publishes directly to topic</li>
+                                <li>Original OrderStatus preserved — no re-randomization</li>
                             </ul>
                         </div>
                         <div class="note danger">
-                            <h4>Reliability Guarantees</h4>
+                            <h4>Reliability Layers</h4>
                             <ul>
-                                <li>Outbox: no message without DB commit</li>
-                                <li>Idempotency: atomic UPDATE WHERE IsProcessed=0</li>
-                                <li>DLQ: poison messages quarantined for triage</li>
+                                <li>Outbox quarantine + auto-resurrection (queue side)</li>
+                                <li>UnpublishedTopicMessages retry (topic side)</li>
+                                <li>DeadLetterLogs for poison messages (consumer side)</li>
                             </ul>
                         </div>
                     </div>
@@ -1565,16 +1689,18 @@
 
     </main>
 </div>
-
 <script>
 // =================================================================
 // DEFAULT THEME — change this to set the starting theme.
-// Available themes: 'terminal' | 'bloomberg' | 'arctic' | 'solar' | 'ledger'
+// Available themes: 'slate' | 'terminal' | 'bloomberg' | 'arctic' | 'solar' | 'ledger'
 // User selections override this and persist in localStorage.
+// To force the default after changing it, clear localStorage or
+// pick the desired theme from the dropdown once.
 // =================================================================
-const DEFAULT_THEME = 'terminal';
+const DEFAULT_THEME = 'slate';
 
 const THEME_LABELS = {
+    slate:     { name: 'Slate',     color: '#5dd5c4' },
     terminal:  { name: 'Terminal',  color: '#ffb020' },
     bloomberg: { name: 'Bloomberg', color: '#ff8000' },
     arctic:    { name: 'Arctic',    color: '#0066cc' },
@@ -1591,44 +1717,8 @@ const state = {
     autoRefresh: { orders: null, outbox: null, deadletter: null },
     globalRefreshTimer: null,
     apiHealthy: false,
-    prevStats: {},
     currentTheme: DEFAULT_THEME,
 };
-
-// =================================================================
-// THEME SWITCHING
-// =================================================================
-function setTheme(name) {
-    if (!THEME_LABELS[name]) name = DEFAULT_THEME;
-    document.documentElement.setAttribute('data-theme', name);
-    state.currentTheme = name;
-    try { localStorage.setItem('tradingops-theme', name); } catch (e) { /* ignore */ }
-    const trig = document.getElementById('themeName');
-    const swatch = document.getElementById('themeSwatch');
-    if (trig) trig.textContent = THEME_LABELS[name].name.toUpperCase();
-    if (swatch) swatch.style.background = THEME_LABELS[name].color;
-    document.querySelectorAll('.theme-option').forEach(opt => {
-        opt.classList.toggle('active', opt.dataset.theme === name);
-    });
-    closeThemeMenu();
-}
-
-function toggleThemeMenu() {
-    document.getElementById('themeMenu').classList.toggle('open');
-}
-function closeThemeMenu() {
-    document.getElementById('themeMenu').classList.remove('open');
-}
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.theme-selector')) closeThemeMenu();
-});
-
-// Initialize theme: localStorage override > DEFAULT_THEME
-(function initTheme() {
-    let saved = null;
-    try { saved = localStorage.getItem('tradingops-theme'); } catch (e) { /* ignore */ }
-    setTheme(saved && THEME_LABELS[saved] ? saved : DEFAULT_THEME);
-})();
 
 // =================================================================
 // HELPERS
@@ -1653,8 +1743,6 @@ async function api(path, opts = {}) {
         }
         return { ok: res.ok, status: res.status, body, networkError: false };
     } catch (err) {
-        // Silent failure — return a synthetic response so callers
-        // don't have to plaster try/catch everywhere.
         return { ok: false, status: 0, body: null, networkError: true, error: err };
     }
 }
@@ -1662,7 +1750,7 @@ async function api(path, opts = {}) {
 function setOut(id, content, isError = false) {
     const el = $(id);
     if (!el) return;
-    el.style.color = isError ? '#ff4757' : '';
+    el.style.color = isError ? 'var(--red)' : '';
     el.textContent = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
 }
 
@@ -1697,6 +1785,81 @@ function setConnStatus(connected, msg) {
 }
 
 // =================================================================
+// TOAST NOTIFICATIONS (replaces native alerts)
+// =================================================================
+function toast(message, kind = 'info', durationMs = 4000) {
+    const container = $('toastContainer');
+    if (!container) return;
+    const el = document.createElement('div');
+    const colors = {
+        info:    { bg: 'var(--bg-2)', border: 'var(--border-bright)', text: 'var(--text-0)' },
+        success: { bg: 'var(--bg-2)', border: 'var(--green-dim)',     text: 'var(--green)' },
+        warn:    { bg: 'var(--bg-2)', border: 'var(--accent-dim)',    text: 'var(--accent)' },
+        error:   { bg: 'var(--bg-2)', border: 'var(--red-dim)',       text: 'var(--red)' },
+    };
+    const c = colors[kind] || colors.info;
+    el.style.cssText = `
+        background: ${c.bg};
+        border: 1px solid ${c.border};
+        border-left: 3px solid ${c.border};
+        color: ${c.text};
+        padding: 10px 16px;
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.05em;
+        min-width: 240px;
+        max-width: 400px;
+        pointer-events: auto;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transform: translateX(120%);
+        transition: transform 0.25s ease, opacity 0.25s ease;
+        white-space: pre-line;
+    `;
+    el.textContent = message;
+    container.appendChild(el);
+    // Animate in
+    requestAnimationFrame(() => { el.style.transform = 'translateX(0)'; });
+    // Animate out
+    setTimeout(() => {
+        el.style.transform = 'translateX(120%)';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+    }, durationMs);
+}
+
+// =================================================================
+// THEME SWITCHING
+// =================================================================
+function setTheme(name) {
+    if (!THEME_LABELS[name]) name = DEFAULT_THEME;
+    document.documentElement.setAttribute('data-theme', name);
+    state.currentTheme = name;
+    try { localStorage.setItem('tradingops-theme', name); } catch (e) {}
+    const trig = $('themeName');
+    const swatch = $('themeSwatch');
+    if (trig) trig.textContent = THEME_LABELS[name].name.toUpperCase();
+    if (swatch) swatch.style.background = THEME_LABELS[name].color;
+    document.querySelectorAll('.theme-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.theme === name);
+    });
+    closeThemeMenu();
+}
+
+function toggleThemeMenu() { $('themeMenu').classList.toggle('open'); }
+function closeThemeMenu() { $('themeMenu').classList.remove('open'); }
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.theme-selector')) closeThemeMenu();
+});
+
+// Init theme: localStorage override > DEFAULT_THEME
+(function initTheme() {
+    let saved = null;
+    try { saved = localStorage.getItem('tradingops-theme'); } catch (e) {}
+    setTheme(saved && THEME_LABELS[saved] ? saved : DEFAULT_THEME);
+})();
+
+// =================================================================
 // TABS
 // =================================================================
 document.querySelectorAll('.tab').forEach(btn => {
@@ -1718,7 +1881,6 @@ async function refreshAllStats(force = false) {
         api('/api/deadletter/stats'),
     ]);
 
-    // Determine connection health from the calls
     const anyOk = orders.ok || outboxStats.ok || dlStats.ok;
     setConnStatus(anyOk, anyOk ? 'CONNECTED' : 'API OFFLINE');
 
@@ -1751,7 +1913,6 @@ async function refreshAllStats(force = false) {
         $('gDlUnres').textContent = '—';
     }
 
-    // Update purge zone summary
     updatePurgeSummary(anyOk, ordersCount, outboxCount, dlCount);
 }
 
@@ -1772,48 +1933,48 @@ function updatePurgeSummary(connected, orders, outbox, dl) {
     set('purgeSumDl',     'DL',  dl);
 }
 
-async function purgeDatabase() {
-    const ordersCount = parseInt($('gOrders').textContent, 10) || 0;
-    const outboxCount = parseInt($('gOutbox').textContent, 10) || 0;
-    const dlCount     = parseInt($('gDl').textContent, 10) || 0;
-    const total = ordersCount + outboxCount + dlCount;
+// =================================================================
+// CLEAR ALL UI STATE — used after purge to reset every tab
+// =================================================================
+function clearAllUiState() {
+    // Lists
+    $('ordersList').innerHTML = '<div class="list-empty">// no orders loaded — click refresh</div>';
+    $('outboxList').innerHTML = '<div class="list-empty">// no messages loaded</div>';
+    $('dlList').innerHTML = '<div class="list-empty">// no dead letters loaded</div>';
 
-    if (total === 0) {
-        alert('Nothing to purge — all tables are already empty.');
-        return;
-    }
+    // Metric counters under each list
+    ['totalOrders','processedOrders','ackOrders','rejectedOrders',
+     'outboxTotal','outboxProcessed','outboxUnprocessed','outbox24h',
+     'dlTotal','dlUnresolved','dlResolved','dl24h'].forEach(id => {
+        const el = $(id);
+        if (el) el.textContent = '0';
+    });
 
-    const msg = `PURGE WARNING\n\nThis will DELETE ALL rows from:\n` +
-                `  • Orders          (${ordersCount})\n` +
-                `  • OutboxMessages  (${outboxCount})\n` +
-                `  • DeadLetterLogs  (${dlCount})\n\n` +
-                `Total rows to delete: ${total}\n\nProceed?`;
-    if (!confirm(msg)) return;
+    // Response terminals — orders tab
+    setOut('singleOrderResponse', '// awaiting input...');
+    setOut('orderByIdResponse', '// awaiting lookup...');
+    $('orderId').value = '';
 
-    const results = await Promise.allSettled([
-        api('/api/order', { method: 'DELETE' }),
-        api('/api/outboxmessage', { method: 'DELETE' }),
-        api('/api/deadletter', { method: 'DELETE' }),
-    ]);
+    // Outbox tab
+    setOut('outboxByIdResponse', '// awaiting lookup...');
+    $('outboxId').value = '';
 
-    const summary = results.map((r, i) => {
-        const label = ['Orders', 'OutboxMessages', 'DeadLetterLogs'][i];
-        if (r.status === 'rejected') return `${label}: REJECTED`;
-        const v = r.value;
-        if (v.networkError) return `${label}: NETWORK FAIL`;
-        if (!v.ok) return `${label}: HTTP ${v.status}`;
-        return `${label}: OK`;
-    }).join('\n');
+    // Dead letter tab
+    setOut('dlByIdResponse', '// awaiting request...');
+    $('dlId').value = '';
+    $('dlClientOrderId').value = '';
+    $('dlNotes').value = '';
+    $('dlNewClientOrderId').value = '';
 
-    alert(`PURGE COMPLETE\n\n${summary}`);
+    // Burst stats
+    state.burstSent = 0; state.burstSuccess = 0; state.burstFailed = 0;
+    updateBurstStats();
+    setOut('burstResponse', 'idle.');
 
-    // Refresh everything
-    refreshAllStats();
-    if ($('ordersList')) getAllOrders();
-    const outboxList = $('outboxList');
-    if (outboxList && !outboxList.innerHTML.includes('no messages loaded')) getOutbox('all');
-    const dlList = $('dlList');
-    if (dlList && !dlList.innerHTML.includes('no dead letters loaded')) getDeadLetters('all');
+    // Scenario terminals
+    ['scE2EOut','scPubSubOut','scParOut','scOutboxOut','scIdemOut','scDlOut'].forEach(id => {
+        setOut(id, 'idle.');
+    });
 }
 
 // =================================================================
@@ -1828,10 +1989,14 @@ async function createOrder() {
     const res = await api('/api/order', { method: 'POST', body: JSON.stringify(payload) });
     if (res.networkError) {
         setOut('singleOrderResponse', `✗ API unreachable\n${baseUrl()}/api/order`, true);
+        toast('API unreachable — start TradingApp.API', 'error');
         return;
     }
     setOut('singleOrderResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
-    if (res.ok) refreshAllStats();
+    if (res.ok) {
+        toast(`Order submitted: ${res.body?.clientOrderId?.slice(0,8) || 'OK'}…`, 'success');
+        refreshAllStats();
+    }
 }
 
 async function getAllOrders() {
@@ -1894,6 +2059,7 @@ async function deleteOrderById() {
     const res = await api('/api/order/' + encodeURIComponent(id), { method: 'DELETE' });
     if (res.networkError) { setOut('orderByIdResponse', '✗ API offline', true); return; }
     setOut('orderByIdResponse', `HTTP ${res.status}\n` + (res.body ? JSON.stringify(res.body, null, 2) : 'Deleted.'), !res.ok);
+    if (res.ok) toast('Order deleted', 'success');
     getAllOrders();
     refreshAllStats();
 }
@@ -1901,8 +2067,8 @@ async function deleteOrderById() {
 async function deleteAllOrders() {
     if (!confirm('Delete ALL orders? This cannot be undone.')) return;
     const res = await api('/api/order', { method: 'DELETE' });
-    if (res.networkError) { alert('✗ API offline'); return; }
-    alert(`HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2));
+    if (res.networkError) { toast('API offline', 'error'); return; }
+    toast(`All orders deleted (HTTP ${res.status})`, res.ok ? 'success' : 'error');
     getAllOrders();
     refreshAllStats();
 }
@@ -1927,6 +2093,7 @@ async function burstCreateOrders() {
         if (i >= count) {
             stopBurst();
             appendOut('burstResponse', `✓ burst complete: ${state.burstSuccess} success / ${state.burstFailed} failed`, 'var(--green)');
+            toast(`Burst complete: ${state.burstSuccess}/${count}`, state.burstFailed === 0 ? 'success' : 'warn');
             refreshAllStats();
             return;
         }
@@ -2022,6 +2189,7 @@ async function markOutboxProcessed() {
     const res = await api('/api/outboxmessage/' + encodeURIComponent(id) + '/mark-processed', { method: 'POST' });
     if (res.networkError) { setOut('outboxByIdResponse', '✗ API offline', true); return; }
     setOut('outboxByIdResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
+    if (res.ok) toast('Outbox message marked processed', 'success');
     getOutbox('all');
 }
 
@@ -2032,14 +2200,15 @@ async function deleteOutboxById() {
     const res = await api('/api/outboxmessage/' + encodeURIComponent(id), { method: 'DELETE' });
     if (res.networkError) { setOut('outboxByIdResponse', '✗ API offline', true); return; }
     setOut('outboxByIdResponse', `HTTP ${res.status}\n` + (res.body ? JSON.stringify(res.body, null, 2) : 'Deleted.'), !res.ok);
+    if (res.ok) toast('Outbox message deleted', 'success');
     getOutbox('all');
 }
 
 async function deleteAllOutbox() {
     if (!confirm('Delete ALL outbox messages?')) return;
     const res = await api('/api/outboxmessage', { method: 'DELETE' });
-    if (res.networkError) { alert('✗ API offline'); return; }
-    alert(`HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2));
+    if (res.networkError) { toast('API offline', 'error'); return; }
+    toast(`All outbox messages deleted (HTTP ${res.status})`, res.ok ? 'success' : 'error');
     getOutbox('all'); refreshAllStats();
 }
 
@@ -2119,6 +2288,7 @@ async function resolveDeadLetter() {
     const res = await api('/api/deadletter/' + encodeURIComponent(id) + '/resolve', { method: 'POST', body: JSON.stringify(payload) });
     if (res.networkError) { setOut('dlByIdResponse', '✗ API offline', true); return; }
     setOut('dlByIdResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
+    if (res.ok) toast('Dead letter resolved', 'success');
     getDeadLetters('all');
 }
 
@@ -2131,7 +2301,10 @@ async function createDeadLetter() {
     const res = await api('/api/deadletter', { method: 'POST', body: JSON.stringify(payload) });
     if (res.networkError) { setOut('dlByIdResponse', '✗ API offline', true); return; }
     setOut('dlByIdResponse', `HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2), !res.ok);
-    if (res.ok && res.body?.id) $('dlId').value = res.body.id;
+    if (res.ok) {
+        if (res.body?.id) $('dlId').value = res.body.id;
+        toast('Dead letter injected', 'success');
+    }
     getDeadLetters('all');
 }
 
@@ -2142,15 +2315,62 @@ async function deleteDeadLetterById() {
     const res = await api('/api/deadletter/' + encodeURIComponent(id), { method: 'DELETE' });
     if (res.networkError) { setOut('dlByIdResponse', '✗ API offline', true); return; }
     setOut('dlByIdResponse', `HTTP ${res.status}\n` + (res.body ? JSON.stringify(res.body, null, 2) : 'Deleted.'), !res.ok);
+    if (res.ok) toast('Dead letter deleted', 'success');
     getDeadLetters('all');
 }
 
 async function deleteAllDeadLetters() {
     if (!confirm('Delete ALL dead letters?')) return;
     const res = await api('/api/deadletter', { method: 'DELETE' });
-    if (res.networkError) { alert('✗ API offline'); return; }
-    alert(`HTTP ${res.status}\n` + JSON.stringify(res.body, null, 2));
+    if (res.networkError) { toast('API offline', 'error'); return; }
+    toast(`All dead letters deleted (HTTP ${res.status})`, res.ok ? 'success' : 'error');
     getDeadLetters('all'); refreshAllStats();
+}
+
+// =================================================================
+// PURGE DATABASE — wipes all 3 tables + clears UI state
+// =================================================================
+async function purgeDatabase() {
+    const ordersCount = parseInt($('gOrders').textContent, 10) || 0;
+    const outboxCount = parseInt($('gOutbox').textContent, 10) || 0;
+    const dlCount     = parseInt($('gDl').textContent, 10) || 0;
+    const total = ordersCount + outboxCount + dlCount;
+
+    if (total === 0) {
+        toast('Nothing to purge — all tables empty', 'info');
+        return;
+    }
+
+    const msg = `PURGE WARNING\n\nDelete ALL rows from:\n` +
+                `  • Orders          (${ordersCount})\n` +
+                `  • OutboxMessages  (${outboxCount})\n` +
+                `  • DeadLetterLogs  (${dlCount})\n\n` +
+                `Total rows to delete: ${total}\n\nProceed?`;
+    if (!confirm(msg)) return;
+
+    const results = await Promise.allSettled([
+        api('/api/order', { method: 'DELETE' }),
+        api('/api/outboxmessage', { method: 'DELETE' }),
+        api('/api/deadletter', { method: 'DELETE' }),
+    ]);
+
+    const labels = ['Orders', 'OutboxMessages', 'DeadLetterLogs'];
+    let allOk = true;
+    results.forEach((r, i) => {
+        if (r.status === 'rejected' || !r.value?.ok) {
+            allOk = false;
+            const detail = r.status === 'rejected' ? 'REJECTED'
+                         : r.value?.networkError ? 'NETWORK FAIL'
+                         : `HTTP ${r.value?.status}`;
+            toast(`${labels[i]}: ${detail}`, 'error');
+        }
+    });
+
+    // Always reset UI state, even if some calls failed
+    clearAllUiState();
+    refreshAllStats();
+
+    if (allOk) toast(`Purged ${total} rows across 3 tables`, 'success');
 }
 
 // =================================================================
@@ -2184,8 +2404,7 @@ async function scenarioFullLifecycle() {
     appendOut(out, `▶ phase 1/4: baseline snapshot`, 'var(--blue)');
     const baseStats = await api('/api/outboxmessage/stats');
     if (baseStats.networkError) { appendOut(out, '✗ API offline — abort', 'var(--red)'); return; }
-    const baseOutbox = baseStats.body?.totalCount ?? 0;
-    appendOut(out, `  outbox total: ${baseOutbox}`);
+    appendOut(out, `  outbox total: ${baseStats.body?.totalCount ?? 0}`);
 
     appendOut(out, `▶ phase 2/4: creating ${count} orders`, 'var(--blue)');
     const ids = [];
@@ -2197,7 +2416,7 @@ async function scenarioFullLifecycle() {
 
     appendOut(out, `▶ phase 3/4: polling for ${wait}s (status changes)`, 'var(--blue)');
     const start = Date.now();
-    const seen = new Map();  // id -> last status
+    const seen = new Map();
     while ((Date.now() - start) / 1000 < wait) {
         for (const id of ids) {
             const r = await api('/api/order/' + id);
@@ -2209,7 +2428,6 @@ async function scenarioFullLifecycle() {
                 }
             }
         }
-        // Check if everyone reached FILLED
         let allFilled = true;
         for (const id of ids) {
             const last = seen.get(id);
@@ -2402,7 +2620,6 @@ async function scenarioIdempotency() {
         const created = new Date(r.body.createdAt).getTime();
         const updated = new Date(r.body.updatedAt).getTime();
         if (!r.body.isProcessed) { unproc++; continue; }
-        // If the update timestamp moved, it was processed exactly once for this run
         if (updated > created) { single++; }
         else { multi++; }
     }
@@ -2456,12 +2673,11 @@ async function scenarioDeadLetterRoundTrip() {
 // INIT
 // =================================================================
 window.addEventListener('load', async () => {
-    // Initial refresh
     await refreshAllStats();
     if (state.apiHealthy) {
         getAllOrders();
+        toast('Connected — TRADING.OPS ready', 'success', 2500);
     }
-    // Global heartbeat every 10s (only if a request "succeeds" once we don't keep spamming when offline)
     state.globalRefreshTimer = setInterval(() => {
         refreshAllStats();
     }, 10000);

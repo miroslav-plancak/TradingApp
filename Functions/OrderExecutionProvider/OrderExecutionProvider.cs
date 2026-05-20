@@ -79,7 +79,7 @@ namespace OrderExecutionProvider
         {
             try
             {
-                var sender = _serviceBusClient.CreateSender("order_events_topic123");
+                var sender = _serviceBusClient.CreateSender("order_events_topic");
 
                 var eventPayload = new OrderProcessedEvent
                 {
