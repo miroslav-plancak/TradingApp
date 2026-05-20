@@ -14,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<TradingDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
     
-builder.Services.AddSingleton<ITradingAppLogger, TradingAppLogger>();
+builder.Services.AddSingleton<ILogger, TradingAppLogger>();
 
 builder.Services.AddControllers();
 

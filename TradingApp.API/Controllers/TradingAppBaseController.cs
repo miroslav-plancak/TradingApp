@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TradingApp.Business.Interfaces.Logger;
+using Microsoft.Extensions.Logging;
 
 namespace TradingApp.API.Controllers
 {
@@ -7,13 +7,12 @@ namespace TradingApp.API.Controllers
     [Route("api/[controller]")]
     public abstract class TradingAppBaseController<T> : ControllerBase
     {
-        protected readonly ITradingAppLogger _logger;
+        protected readonly ILogger<T> _logger;
 
-        protected TradingAppBaseController(ITradingAppLogger logger)
+        protected TradingAppBaseController(ILogger<T> logger)
         {
             _logger = logger;
-            var controllerName = typeof(T).Name;
-
         }
     }
 }
+

@@ -12,7 +12,7 @@ namespace DeadLetterQueueProcessor
     {
         public static IServiceCollection RegisterDeadLetterService(this IServiceCollection services) 
         {
-            services.AddScoped<ITradingAppLogger, TradingAppLogger>();
+            services.AddScoped<ILogger, TradingAppLogger>();
             services.AddScoped<IDeadLetterService, DeadLetterService>();
             services.AddScoped<IDeadLetterRepository, DeadLetterRepository>();
             return services;

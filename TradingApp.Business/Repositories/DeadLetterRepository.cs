@@ -9,7 +9,7 @@ using TradingApp.Business.Extensions;
 using TradingApp.Business.Interfaces.Logger;
 using TradingApp.Business.Interfaces.Repositories;
 using TradingApp.Domain;
-using TradingApp.Domain.Models.Entities;
+using TradingApp.Domain.Models.Entities.DeadLetterLog;
 
 namespace TradingApp.Business.Repositories
 {
@@ -17,7 +17,7 @@ namespace TradingApp.Business.Repositories
     {
         private readonly TradingDbContext _tradingDbContext;
 
-        public DeadLetterRepository(ITradingAppLogger logger, TradingDbContext tradingDbContext) : base(logger)
+        public DeadLetterRepository(ILogger logger, TradingDbContext tradingDbContext) : base(logger)
         {
             _tradingDbContext = tradingDbContext;
         }

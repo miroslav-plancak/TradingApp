@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TradingApp.Business.DTOs.DeadLetter;
-using TradingApp.Domain.Models.Entities;
+using TradingApp.Domain.Models.Entities.DeadLetterLog;
 
 namespace TradingApp.Business.Interfaces.Repositories
 {

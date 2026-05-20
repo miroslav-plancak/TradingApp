@@ -8,7 +8,7 @@ using TradingApp.Business.Constants;
 using TradingApp.Business.Interfaces.Logger;
 namespace TradingApp.Business.Logger
 {
-    public class TradingAppLogger : ITradingAppLogger
+    public class TradingAppLogger : Interfaces.Logger.ILogger
     {
         private readonly ILogger<TradingAppLogger>  _logger;
         private static readonly AsyncLocal<Dictionary<string, object>> _scopeData = new();
@@ -49,6 +49,12 @@ namespace TradingApp.Business.Logger
             _logger.LogInformation(message);
         }
 
+        public void LogInformation(string message, params object[] arguments)
+        {
+            using var scope = BeginScopeWithProperties();
+            _logger.LogInformation(message, arguments);
+        }
+
         public void LogWarning(string message)  
         {
            _logger.LogWarning(message);
@@ -73,6 +79,18 @@ namespace TradingApp.Business.Logger
         {
             using var scope = BeginScopeWithProperties();
             _logger.LogWarning(ex, message);
+        }
+
+        public void LogWarning(string messageTemplate, params object[] args)
+        {
+            using var scope = BeginScopeWithProperties();
+            _logger.LogWarning(messageTemplate, args);
+        }
+
+        public void LogError(Exception ex, string messageTemplate, params object[] args)
+        {
+            using var scope = BeginScopeWithProperties();
+            _logger.LogError(ex, messageTemplate, args);
         }
 
         private IDisposable BeginScopeWithProperties(params (string key, object value)[] properties)

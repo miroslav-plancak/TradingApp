@@ -1,24 +1,25 @@
-﻿using System;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using TradingApp.Business.DTOs;
 using TradingApp.Business.DTOs.DeadLetter;
-using TradingApp.Business.Extensions;
-using TradingApp.Business.Interfaces.Logger;
 using TradingApp.Business.Interfaces.Repositories;
 using TradingApp.Business.Interfaces.Services;
 using TradingApp.Business.Mappers;
 
 namespace TradingApp.Business.Services.Regular
 {
-    public class DeadLetterService : TradingAppBaseLoggerExtension<DeadLetterService>, IDeadLetterService
+    public class DeadLetterService : IDeadLetterService
     {
         private readonly IDeadLetterRepository _deadLetterRepository;
+        private readonly ILogger<DeadLetterService> _logger;
 
         public DeadLetterService(
-            ITradingAppLogger logger,
-            IDeadLetterRepository deadLetterRepository) : base(logger)
+            ILogger<DeadLetterService> logger,
+            IDeadLetterRepository deadLetterRepository)
         {
+            _logger = logger;
             _deadLetterRepository = deadLetterRepository;
         }
 
@@ -34,146 +35,245 @@ namespace TradingApp.Business.Services.Regular
 
         public async Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(CreateDeadLetterRequestDTO createRequest)
         {
-            LogEntryWithScope();
+            _logger.LogInformation("CreateDeadLetterLog | ClientOrderId: {ClientOrderId}", createRequest.ClientOrderId);
 
-            var deadLetterEntity = DeadLetterMapper.ToEntity(createRequest.MessageBody, createRequest.ClientOrderId, createRequest.Reason);
-            var deadLetterLog = await _deadLetterRepository.CreateDeadLetterLogAsync(deadLetterEntity);
+            try
+            {
+                var deadLetterEntity = DeadLetterMapper.ToEntity(createRequest.MessageBody, createRequest.ClientOrderId, createRequest.Reason);
+                var deadLetterLog = await _deadLetterRepository.CreateDeadLetterLogAsync(deadLetterEntity);
 
-            LogExitWithScope();
+                _logger.LogInformation("DeadLetterLogCreated | Id: {Id} | ClientOrderId: {ClientOrderId}",
+                    deadLetterLog.Id, createRequest.ClientOrderId);
 
-            var result = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
-            return result;
+                return DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CreateDeadLetterLogFailed | ClientOrderId: {ClientOrderId}", createRequest.ClientOrderId);
+                throw new Exception($"Failed to create dead letter log for client order {createRequest.ClientOrderId}", ex);
+            }
+        }
+
+        public async Task<DeadLetterLogResponseDTO> GetDeadLetterLogByIdAsync(Guid id)
+        {
+            _logger.LogInformation("GetDeadLetterLogById | Id: {Id}", id);
+
+            try
+            {
+                var deadLetterLog = await _deadLetterRepository.GetDeadLetterLogByIdAsync(id);
+
+                if (deadLetterLog == null)
+                {
+                    _logger.LogWarning("DeadLetterLogNotFound | Id: {Id}", id);
+                    throw new KeyNotFoundException($"Dead letter log {id} not found.");
+                }
+
+                var deadLetterDTO = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
+
+                _logger.LogInformation("DeadLetterLogRetrieved | Id: {Id}", id);
+
+                return deadLetterDTO;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetDeadLetterLogByIdFailed | Id: {Id}", id);
+                throw new Exception($"Failed to retrieve dead letter log {id}", ex);
+            }
         }
 
         public async Task<DeadLetterLogResponseDTO> GetByClientOrderIdAsync(Guid clientOrderId)
         {
-            LogEntryWithScope();
+            _logger.LogInformation("GetDeadLetterLogByClientOrderId | ClientOrderId: {ClientOrderId}", clientOrderId);
 
-            var deadLetterLog = await _deadLetterRepository.GetByClientOrderIdAsync(clientOrderId);
-
-            if (deadLetterLog == null)
+            try
             {
-                throw new KeyNotFoundException($"Dead letter log for client order {clientOrderId} not found.");
+                var deadLetterLog = await _deadLetterRepository.GetByClientOrderIdAsync(clientOrderId);
+
+                if (deadLetterLog == null)
+                {
+                    _logger.LogWarning("DeadLetterLogNotFoundForClientOrder | ClientOrderId: {ClientOrderId}", clientOrderId);
+                    throw new KeyNotFoundException($"Dead letter log for client order {clientOrderId} not found.");
+                }
+
+                var deadLetterDTO = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
+
+                _logger.LogInformation("DeadLetterLogRetrievedByClientOrderId | ClientOrderId: {ClientOrderId}", clientOrderId);
+
+                return deadLetterDTO;
             }
-
-            var deadLetterDTO = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
-
-            LogExitWithScope();
-
-            return deadLetterDTO;
-        }
-
-        public async Task<bool> DeleteDeadLetterLogAsync(Guid id)
-        {
-            LogEntryWithScope();
-
-            var deadLetterLog = await _deadLetterRepository.GetDeadLetterLogByIdAsync(id);
-
-            if (deadLetterLog == null)
+            catch (KeyNotFoundException)
             {
-                throw new KeyNotFoundException($"Dead letter log {id} not found.");
+                throw;
             }
-
-            var deleted = await _deadLetterRepository.DeleteDeadLetterLogAsync(id);
-
-            LogExitWithScope();
-
-            return deleted;
-        }
-
-        public async Task<int> DeleteAllDeadLetterLogsAsync()
-        {
-            LogEntryWithScope();
-
-            var deletedCount = await _deadLetterRepository.DeleteAllDeadLetterLogsAsync();
-
-            LogExitWithScope();
-
-            return deletedCount;
-        }
-
-
-        public async Task<DeadLetterLogResponseDTO> GetDeadLetterLogByIdAsync(Guid id)
-        {
-            LogEntryWithScope();
-
-            var deadLetterLog = await _deadLetterRepository.GetDeadLetterLogByIdAsync(id);
-
-            if (deadLetterLog == null)
+            catch (Exception ex)
             {
-                throw new KeyNotFoundException($"Dead letter log {id} not found.");
+                _logger.LogError(ex, "GetDeadLetterLogByClientOrderIdFailed | ClientOrderId: {ClientOrderId}", clientOrderId);
+                throw new Exception($"Failed to retrieve dead letter log for client order {clientOrderId}", ex);
             }
-
-            var deadLetterDTO = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
-
-            LogExitWithScope();
-
-            return deadLetterDTO;
         }
 
         public async Task<IEnumerable<DeadLetterLogResponseDTO>> GetAllDeadLetterLogsAsync()
         {
-            LogEntryWithScope();
+            _logger.LogInformation("GetAllDeadLetterLogs");
 
-            var deadLetterLogs = await _deadLetterRepository.GetAllDeadLetterLogsAsync();
-            var deadLetterDTOs = DeadLetterMapper.ToDeadLetterLogResponseDTOs(deadLetterLogs);
+            try
+            {
+                var deadLetterLogs = await _deadLetterRepository.GetAllDeadLetterLogsAsync();
+                var deadLetterDTOs = DeadLetterMapper.ToDeadLetterLogResponseDTOs(deadLetterLogs);
 
-            LogExitWithScope();
+                _logger.LogInformation("DeadLetterLogsRetrieved | Count: {Count}", deadLetterDTOs.Count());
 
-            return deadLetterDTOs;
+                return deadLetterDTOs;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAllDeadLetterLogsFailed");
+                throw new Exception("Failed to retrieve dead letter logs", ex);
+            }
         }
 
         public async Task<IEnumerable<DeadLetterLogResponseDTO>> GetUnresolvedDeadLetterLogsAsync()
         {
-            LogEntryWithScope();
+            _logger.LogInformation("GetUnresolvedDeadLetterLogs");
 
-            var deadLetterLogs = await _deadLetterRepository.GetUnresolvedDeadLetterLogsAsync();
-            var deadLetterDTOs = DeadLetterMapper.ToDeadLetterLogResponseDTOs(deadLetterLogs);
+            try
+            {
+                var deadLetterLogs = await _deadLetterRepository.GetUnresolvedDeadLetterLogsAsync();
+                var deadLetterDTOs = DeadLetterMapper.ToDeadLetterLogResponseDTOs(deadLetterLogs);
 
-            LogExitWithScope();
+                _logger.LogInformation("UnresolvedDeadLetterLogsRetrieved | Count: {Count}", deadLetterDTOs.Count());
 
-            return deadLetterDTOs;
+                return deadLetterDTOs;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetUnresolvedDeadLetterLogsFailed");
+                throw new Exception("Failed to retrieve unresolved dead letter logs", ex);
+            }
         }
 
         public async Task<DeadLetterLogResponseDTO> MarkAsResolvedAsync(Guid id, ResolveDeadLetterRequestDTO resolveRequest)
         {
-            LogEntryWithScope();
+            _logger.LogInformation("MarkDeadLetterLogAsResolved | Id: {Id}", id);
 
-            var deadLetterLog = await _deadLetterRepository.MarkAsResolvedAsync(
-                id,
-                resolveRequest.ResolutionNotes,
-                resolveRequest.ResolvedBy);
-
-            if (deadLetterLog == null)
+            try
             {
-                throw new KeyNotFoundException($"Dead letter log {id} not found.");
+                var deadLetterLog = await _deadLetterRepository.MarkAsResolvedAsync(
+                    id,
+                    resolveRequest.ResolutionNotes,
+                    resolveRequest.ResolvedBy);
+
+                if (deadLetterLog == null)
+                {
+                    _logger.LogWarning("DeadLetterLogNotFoundForResolve | Id: {Id}", id);
+                    throw new KeyNotFoundException($"Dead letter log {id} not found.");
+                }
+
+                var deadLetterDTO = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
+
+                _logger.LogInformation("DeadLetterLogMarkedAsResolved | Id: {Id}", id);
+
+                return deadLetterDTO;
             }
-
-            var deadLetterDTO = DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
-
-            LogExitWithScope();
-
-            return deadLetterDTO;
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "MarkDeadLetterLogAsResolvedFailed | Id: {Id}", id);
+                throw new Exception($"Failed to mark dead letter log {id} as resolved", ex);
+            }
         }
 
         public async Task<DeadLetterStatsDTO> GetStatsAsync()
         {
-            LogEntryWithScope();
+            _logger.LogInformation("GetDeadLetterStats");
 
-            var stats = await _deadLetterRepository.GetStatsAsync();
+            try
+            {
+                var stats = await _deadLetterRepository.GetStatsAsync();
 
-            LogExitWithScope();
+                _logger.LogInformation("DeadLetterStatsRetrieved");
 
-            return stats;
+                return stats;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetDeadLetterStatsFailed");
+                throw new Exception("Failed to retrieve dead letter stats", ex);
+            }
+        }
+
+        public async Task<bool> DeleteDeadLetterLogAsync(Guid id)
+        {
+            _logger.LogInformation("DeleteDeadLetterLog | Id: {Id}", id);
+
+            try
+            {
+                var deadLetterLog = await _deadLetterRepository.GetDeadLetterLogByIdAsync(id);
+
+                if (deadLetterLog == null)
+                {
+                    _logger.LogWarning("DeadLetterLogNotFoundForDeletion | Id: {Id}", id);
+                    throw new KeyNotFoundException($"Dead letter log {id} not found.");
+                }
+
+                var deleted = await _deadLetterRepository.DeleteDeadLetterLogAsync(id);
+
+                _logger.LogInformation("DeadLetterLogDeleted | Id: {Id}", id);
+
+                return deleted;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DeleteDeadLetterLogFailed | Id: {Id}", id);
+                throw new Exception($"Failed to delete dead letter log {id}", ex);
+            }
+        }
+
+        public async Task<int> DeleteAllDeadLetterLogsAsync()
+        {
+            _logger.LogInformation("DeleteAllDeadLetterLogs");
+
+            try
+            {
+                var deletedCount = await _deadLetterRepository.DeleteAllDeadLetterLogsAsync();
+
+                _logger.LogInformation("AllDeadLetterLogsDeleted | Count: {Count}", deletedCount);
+
+                return deletedCount;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DeleteAllDeadLetterLogsFailed");
+                throw new Exception("Failed to delete all dead letter logs", ex);
+            }
         }
 
         public async Task MarkOutboxMessageAsProcessedAsync(Guid clientOrderId)
         {
-            LogEntryWithScope();
+            _logger.LogInformation("MarkOutboxMessageAsProcessed | ClientOrderId: {ClientOrderId}", clientOrderId);
 
-            await _deadLetterRepository.MarkOutboxMessageAsProcessedAsync(clientOrderId);
+            try
+            {
+                await _deadLetterRepository.MarkOutboxMessageAsProcessedAsync(clientOrderId);
 
-            LogExitWithScope();
+                _logger.LogInformation("OutboxMessageMarkedAsProcessed | ClientOrderId: {ClientOrderId}", clientOrderId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "MarkOutboxMessageAsProcessedFailed | ClientOrderId: {ClientOrderId}", clientOrderId);
+                throw new Exception($"Failed to mark outbox message as processed for client order {clientOrderId}", ex);
+            }
         }
     }
 }

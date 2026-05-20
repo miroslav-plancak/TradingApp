@@ -16,7 +16,7 @@ namespace TradingApp.Business.Repositories
     {
         private readonly TradingDbContext _tradingDbContext;
 
-        public OutboxMessageRepository(ITradingAppLogger logger, TradingDbContext tradingDbContext) : base(logger)
+        public OutboxMessageRepository(ILogger logger, TradingDbContext tradingDbContext) : base(logger)
         {
             _tradingDbContext = tradingDbContext;
         }

@@ -5,8 +5,8 @@ namespace TradingApp.Business.Extensions
 {
     public abstract class TradingAppBaseLoggerExtension<T>
     {
-        protected readonly ITradingAppLogger _logger;
-        protected TradingAppBaseLoggerExtension(ITradingAppLogger logger)
+        protected readonly ILogger _logger;
+        protected TradingAppBaseLoggerExtension(ILogger logger)
         {
             _logger = logger;
             _logger.SetClassScope(typeof(T).Name);

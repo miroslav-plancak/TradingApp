@@ -1,18 +1,18 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using TradingApp.Business.Interfaces.Logger;
 
 namespace TradingApp.Business.Middleware
 {
     public class ExceptionHandlingMiddleware : IMiddleware
     {
-        private readonly ITradingAppLogger _logger;
+        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-        public ExceptionHandlingMiddleware(ITradingAppLogger logger)
+        public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger)
         {
             _logger = logger;
         }
@@ -25,13 +25,18 @@ namespace TradingApp.Business.Middleware
             }
             catch (KeyNotFoundException ex)
             {
-                _logger.LogWarning(ex, ex.Message);
+                _logger.LogWarning(ex, "Resource not found: {Message}", ex.Message);
                 await WriteProblemDetails(context, StatusCodes.Status404NotFound, "Not Found", ex.Message);
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, ex.Message);
+                _logger.LogWarning(ex, "Bad request: {Message}", ex.Message);
                 await WriteProblemDetails(context, StatusCodes.Status400BadRequest, "Bad Request", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
+                await WriteProblemDetails(context, StatusCodes.Status500InternalServerError, "Internal Server Error", "An error occurred while processing your request");
             }
         }
 
@@ -46,7 +51,6 @@ namespace TradingApp.Business.Middleware
 
             context.Response.StatusCode = statusCode;
             context.Response.ContentType = "application/problem+json";
-
             return context.Response.WriteAsync(JsonSerializer.Serialize(problem));
         }
     }

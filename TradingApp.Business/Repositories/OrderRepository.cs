@@ -13,7 +13,7 @@ namespace TradingApp.Business.Repositories
     public class OrderRepository : TradingAppBaseLoggerExtension<OrderRepository>, IOrderRepository
     {
         private readonly TradingDbContext _tradingDbContext;
-        public OrderRepository(ITradingAppLogger logger, TradingDbContext tradingDbContext) : base(logger)
+        public OrderRepository(ILogger logger, TradingDbContext tradingDbContext) : base(logger)
         {
             _tradingDbContext = tradingDbContext;
         }
@@ -24,6 +24,7 @@ namespace TradingApp.Business.Repositories
 
             order.Id = Guid.NewGuid();
             order.ClientOrderId = Guid.NewGuid();
+            order.CorrelationId = Guid.NewGuid().ToString();
             order.CreatedAt = DateTimeOffset.UtcNow;
             order.UpdatedAt = DateTimeOffset.UtcNow;
 
