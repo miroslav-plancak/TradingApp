@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TradingApp.Domain.Models.Entities;
+using TradingApp.Domain.Models.Entities.DeadLetterLog;
 using TradingApp.Domain.Models.Entities.Order;
 using TradingApp.Domain.Models.Entities.OutboxMessage;
 using TradingApp.Domain.Models.Entities.QuarantinedOutboxMessage;
@@ -34,6 +34,9 @@ namespace TradingApp.Domain
                 entity.Property(e => e.CreatedAt).IsRequired();
                 entity.Property(e => e.UpdatedAt).IsRequired();
                 entity.Property(e => e.IsProcessed).IsRequired();
+
+                entity.Property(e => e.CorrelationId);
+                entity.HasIndex(e => e.CorrelationId);
             });
 
             modelBuilder.Entity<OutboxMessage>(entity =>
@@ -47,6 +50,9 @@ namespace TradingApp.Domain
                 entity.Property(e => e.RetryCount).IsRequired();
                 entity.Property(e => e.RetryReason).IsRequired().HasDefaultValue(OutboxRetryReason.None);
                 entity.Property(e => e.LastError);
+
+                entity.Property(e => e.CorrelationId);
+                entity.HasIndex(e => e.CorrelationId);
             });
 
             modelBuilder.Entity<DeadLetterLog>(entity =>
@@ -63,6 +69,9 @@ namespace TradingApp.Domain
                 entity.Property(e => e.ResolutionNotes).HasMaxLength(2000);
                 entity.Property(e => e.ResolvedAt);
                 entity.Property(e => e.ResolvedBy).HasMaxLength(200);
+
+                entity.Property(e => e.CorrelationId);
+                entity.HasIndex(e => e.CorrelationId);
             });
 
             modelBuilder.Entity<QuarantinedOutboxMessage>(entity =>
@@ -86,6 +95,9 @@ namespace TradingApp.Domain
                 entity.Property(e => e.DiscardedAt);
                 entity.Property(e => e.DiscardedBy).HasMaxLength(200);
                 entity.Property(e => e.ResolutionNotes).HasMaxLength(2000);
+
+                entity.Property(e => e.CorrelationId);
+                entity.HasIndex(e => e.CorrelationId);
             });
 
             modelBuilder.Entity<UnpublishedTopicMessage>(entity =>
@@ -101,6 +113,9 @@ namespace TradingApp.Domain
                 entity.Property(e => e.PublishedAt);
                 entity.Property(e => e.RetryCount).IsRequired();
                 entity.Property(e => e.LastError);
+
+                entity.Property(e => e.CorrelationId);
+                entity.HasIndex(e => e.CorrelationId);
             });
         }
     }

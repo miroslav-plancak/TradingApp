@@ -13,5 +13,6 @@ namespace TradingApp.Domain.Models.Entities.Order
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
         public bool IsProcessed { get; set; }
+        public string CorrelationId { get; set; } = string.Empty;
     }
 }

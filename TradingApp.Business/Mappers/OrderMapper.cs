@@ -20,7 +20,8 @@ namespace TradingApp.Business.Mappers
                 Price = entity.Price,
                 CreatedAt = entity.CreatedAt,
                 UpdatedAt = entity.UpdatedAt,
-                IsProcessed = entity.IsProcessed
+                IsProcessed = entity.IsProcessed,
+                CorrelationId = entity.CorrelationId
             };
         }
 

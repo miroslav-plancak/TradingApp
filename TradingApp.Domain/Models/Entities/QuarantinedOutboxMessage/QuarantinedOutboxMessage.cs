@@ -19,5 +19,6 @@ namespace TradingApp.Domain.Models.Entities.QuarantinedOutboxMessage
         public DateTimeOffset? DiscardedAt { get; set; }
         public string? DiscardedBy { get; set; }
         public string? ResolutionNotes { get; set; }
+        public string CorrelationId { get; set; } = string.Empty;
     }
 }

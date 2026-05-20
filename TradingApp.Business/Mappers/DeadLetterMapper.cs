@@ -2,7 +2,7 @@
 using System.Linq;
 using TradingApp.Business.DTOs;
 using TradingApp.Business.DTOs.DeadLetter;
-using TradingApp.Domain.Models.Entities;
+using TradingApp.Domain.Models.Entities.DeadLetterLog;
 
 namespace TradingApp.Business.Mappers
 {
@@ -39,7 +39,9 @@ namespace TradingApp.Business.Mappers
             {
                 ClientOrderId = clientOrderId,
                 MessageBody = messageBody,
-                Reason = reason
+                Reason = reason,
+                ResolutionNotes = "hardcoded ResolutionNotes",
+                ResolvedBy = "hardcoded ResolvedBy"
             };
         }
     }

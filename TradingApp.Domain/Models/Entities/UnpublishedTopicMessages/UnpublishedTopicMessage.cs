@@ -13,5 +13,6 @@ namespace TradingApp.Domain.Models.Entities.UnpublishedTopicMessages
         public DateTimeOffset? PublishedAt { get; set; }
         public int RetryCount { get; set; }
         public string? LastError { get; set; }
+        public string CorrelationId { get; set; } = string.Empty;
     }
 }
