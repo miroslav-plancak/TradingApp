@@ -25,26 +25,28 @@ namespace RiskAnalysisProcessor
             ServiceBusReceivedMessage message
         )
         {
-            _logger.LogInformation("RiskAnalysisFunction triggered.");
+            var correlationId = message.CorrelationId ?? "CorrelationId";
 
-            var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body);
+            _logger.LogInformation("RiskAnalysisProcessor started | CorrelationId: {CorrelationId}",
+                        correlationId);
+
+            var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body.ToString());
 
             if (orderEvent == null)
             {
-                _logger.LogWarning("Received null orderEvent.");
+                _logger.LogWarning("OrderEventNull | CorrelationId: {CorrelationId}", correlationId);
                 return;
             }
 
-            _logger.LogInformation(
-                "Analyzing risk for Order: {ClientOrderId}, Status: {Status}",
-                orderEvent.ClientOrderId,
-                orderEvent.Status);
-
+            _logger.LogInformation("Analyzing risk for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
+                correlationId, orderEvent.ClientOrderId);
 
             var riskScore = await CalculateRiskScore(orderEvent);
 
             _logger.LogInformation(
-                "Risk analysis complete. ClientOrderId: {ClientOrderId}, RiskScore: {RiskScore}",
+                "Risk analysis complete with CorrelationId {CorrelationId} " +
+                "| ClientOrderId: {ClientOrderId} | RiskScore: {RiskScore}",
+                correlationId,
                 orderEvent.ClientOrderId,
                 riskScore);
         }

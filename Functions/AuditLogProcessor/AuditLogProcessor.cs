@@ -25,21 +25,26 @@ namespace AuditLogProcessor
             ServiceBusReceivedMessage message
         )
         {
-            _logger.LogInformation("AuditLogProcessor triggered.");
+            var correlationId = message.CorrelationId ?? "CorrelationId";
 
-            var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body);
+            _logger.LogInformation("AuditLogProcessor started | CorrelationId: {CorrelationId}",
+                        correlationId);
+
+            var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body.ToString());
 
             if (orderEvent == null)
             {
-                _logger.LogWarning("Received null orderEvent.");
+                _logger.LogWarning("OrderEventNull | CorrelationId: {CorrelationId}", correlationId);
                 return;
             }
 
-            _logger.LogInformation("Writing audit log for Order: {ClientOrderId}", orderEvent.ClientOrderId);
+            _logger.LogInformation("Writing audit log for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
+                correlationId, orderEvent.ClientOrderId);
 
             await WriteAuditLog(orderEvent);
 
-            _logger.LogInformation("Audit log written for Order: {ClientOrderId}", orderEvent.ClientOrderId);
+            _logger.LogInformation("Audit log written for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
+                correlationId, orderEvent.ClientOrderId);
 
         }
 

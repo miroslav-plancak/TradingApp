@@ -7,88 +7,104 @@ using System.Text.Json;
 using TradingApp.Domain;
 using TradingApp.Events.Events;
 
-namespace ScheduledUnpublishedTopicMessagesProcessor;
-
-public class ScheduledUnpublishedTopicMessagesProcessor
+namespace ScheduledUnpublishedTopicMessagesProcessor
 {
-    private readonly ILogger _logger;
-    private readonly TradingDbContext _tradingDbContext;
-    private readonly ServiceBusClient _client;
-    private readonly ServiceBusSender _sender;
-
-    public ScheduledUnpublishedTopicMessagesProcessor
-    (
-        ILoggerFactory loggerFactory, 
-        TradingDbContext tradingDbContext,
-        IConfiguration configuration
-    )
+    public class ScheduledUnpublishedTopicMessagesProcessor
     {
-        _logger = loggerFactory.CreateLogger<ScheduledUnpublishedTopicMessagesProcessor>();
-        _tradingDbContext = tradingDbContext;
-        var connectionString = configuration["ServiceBusConnectionString"];
-        _client = new ServiceBusClient(connectionString);
-        _sender = _client.CreateSender("order_events_topic");
-    }
+        private readonly ILogger<ScheduledUnpublishedTopicMessagesProcessor> _logger;
+        private readonly TradingDbContext _tradingDbContext;
+        private readonly ServiceBusClient _serviceBusClient;
+        private readonly ServiceBusSender _sender;
 
-    [Function("ScheduledUnpublishedTopicMessagesProcessor")]
-    public async Task Run([TimerTrigger("0 */1 * * * *")] TimerInfo myTimer)
-    {
-        _logger.LogInformation("ScheduledUnpublishedTopicMessagesProcessor triggered at: {triggerTime}.",
-                DateTimeOffset.UtcNow);
-
-        var pendingMesages = await _tradingDbContext.UnpublishedTopicMessages
-            .Where(x => x.PublishedAt == null && x.RetryCount < 5)
-            .OrderBy(x => x.CreatedAt)
-            .Take(50)
-            .ToListAsync();
-
-        if (pendingMesages.Count == 0) return;
-
-        foreach(var pendingMsg in pendingMesages)
+        public ScheduledUnpublishedTopicMessagesProcessor(
+            ILogger<ScheduledUnpublishedTopicMessagesProcessor> logger,
+            TradingDbContext tradingDbContext,
+            IConfiguration configuration)
         {
-            try
-            {
-                var eventPayload = new OrderProcessedEvent
-                {
-                    ClientOrderId = pendingMsg.ClientOrderId,
-                    Status = pendingMsg.OrderStatus.ToString(),
-                    ProcessedAt = DateTimeOffset.UtcNow
-                };
-
-                var messageBody = JsonSerializer.Serialize(eventPayload);
-                var message = new ServiceBusMessage(messageBody)
-                {
-                    ContentType = "application/json",
-                    Subject = "OrderProcessed"
-                };
-
-                await _sender.SendMessageAsync(message);
-
-                pendingMsg.PublishedAt = DateTimeOffset.UtcNow;
-
-                _logger.LogInformation("ScheduledUnpublishedTopicMessagesProcessor message publised at: {currentTime}.",
-                 DateTimeOffset.UtcNow);
-            }
-            catch(ServiceBusException serviceBusException) 
-            {
-                pendingMsg.RetryCount++;
-                pendingMsg.LastError = serviceBusException.Message;
-             
-                _logger.LogError(serviceBusException, "Retry publish failed for: {clientOrderId}, attempt{retryCount}",
-                    pendingMsg.ClientOrderId,
-                    pendingMsg.RetryCount);
-            }
-            catch (Exception ex) 
-            {
-                pendingMsg.RetryCount++;
-                pendingMsg.LastError = ex.Message;
-
-                _logger.LogError(ex,
-                    "Unexpected error on retry for: {clientOrderId}",
-                  pendingMsg.ClientOrderId);
-            }
+            _logger = logger;
+            _tradingDbContext = tradingDbContext;
+            var connectionString = configuration["ServiceBusConnectionString"];
+            _serviceBusClient = new ServiceBusClient(connectionString);
+            _sender = _serviceBusClient.CreateSender("order_events_topic");
         }
 
-        await _tradingDbContext.SaveChangesAsync();
+        [Function("ScheduledUnpublishedTopicMessagesProcessor")]
+        public async Task Run([TimerTrigger("0 */1 * * * *")] TimerInfo myTimer)
+        {
+            _logger.LogInformation("ScheduledUnpublishedTopicMessagesProcessor triggered at: {TriggerTime}",
+                DateTimeOffset.UtcNow);
+
+            var unpublishedMessages = await _tradingDbContext.UnpublishedTopicMessages
+                .Where(x => x.PublishedAt == null && x.RetryCount < 5)
+                .OrderBy(x => x.CreatedAt)
+                .Take(50)
+                .ToListAsync();
+
+            if (unpublishedMessages.Count == 0)
+            {
+                _logger.LogInformation("NoUnpublishedMessages | No messages to retry");
+                return;
+            }
+
+            _logger.LogInformation("RetryingUnpublishedMessages | Found {Count} messages to retry",
+                unpublishedMessages.Count);
+
+            foreach (var unpublishedMessage in unpublishedMessages)
+            {
+                try
+                {
+                    _logger.LogInformation(
+                        "RetryingTopicPublish | CorrelationId: {CorrelationId} | UnpublishedId: {UnpublishedId} | ClientOrderId: {ClientOrderId}",
+                        unpublishedMessage.CorrelationId, unpublishedMessage.Id, unpublishedMessage.ClientOrderId);
+
+                    var eventPayload = new OrderProcessedEvent
+                    {
+                        ClientOrderId = unpublishedMessage.ClientOrderId,
+                        Status = unpublishedMessage.OrderStatus.ToString(),
+                        ProcessedAt = unpublishedMessage.ProcessedAt
+                    };
+
+                    var messageBody = JsonSerializer.Serialize(eventPayload);
+
+                    var message = new ServiceBusMessage(messageBody)
+                    {
+                        MessageId = Guid.NewGuid().ToString(),
+                        CorrelationId = unpublishedMessage.CorrelationId, // Pass tracker!
+                        ContentType = "application/json",
+                        Subject = "OrderProcessed"
+                    };
+
+                    await _sender.SendMessageAsync(message);
+
+                    unpublishedMessage.PublishedAt = DateTimeOffset.UtcNow;
+
+                    _logger.LogInformation(
+                        "TopicPublishRetrySucceeded | CorrelationId: {CorrelationId} | UnpublishedId: {UnpublishedId}",
+                        unpublishedMessage.CorrelationId, unpublishedMessage.Id);
+                }
+                catch (ServiceBusException sbEx)
+                {
+                    _logger.LogError(sbEx,
+                        "TopicPublishRetryFailed | CorrelationId: {CorrelationId} | UnpublishedId: {UnpublishedId} | Error: {Message}",
+                        unpublishedMessage.CorrelationId, unpublishedMessage.Id, sbEx.Message);
+
+                    unpublishedMessage.RetryCount++;
+                    unpublishedMessage.LastError = sbEx.Message;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "TopicPublishRetryFailed | CorrelationId: {CorrelationId} | UnpublishedId: {UnpublishedId}",
+                        unpublishedMessage.CorrelationId, unpublishedMessage.Id);
+
+                    unpublishedMessage.RetryCount++;
+                }
+            }
+
+            await _tradingDbContext.SaveChangesAsync();
+
+            _logger.LogInformation("RetryProcessingComplete | Processed {Count} unpublished messages",
+                unpublishedMessages.Count);
+        }
     }
 }

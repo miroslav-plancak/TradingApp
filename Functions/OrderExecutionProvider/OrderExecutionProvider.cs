@@ -33,23 +33,36 @@ namespace OrderExecutionProvider
         public async Task Run
         (
             [ServiceBusTrigger(
-            queueName:"CREATE_ORDER_QUEUE",
-            Connection = "ServiceBusConnection")]
-            string messageBody
+                queueName: "CREATE_ORDER_QUEUE",
+                Connection = "ServiceBusConnection")]
+            ServiceBusReceivedMessage message,
+            ServiceBusMessageActions messageActions
         )
         {
-            _logger.LogInformation("OrderExecutionProvider started.");
+            var correlationId = message.CorrelationId ?? "CorrelationId";
 
-            var payload = JsonSerializer.Deserialize<OrderPayload>(messageBody);
+            _logger.LogInformation(
+                "OrderExecutionStarted | CorrelationId: {CorrelationId} | MessageId: {MessageId}",
+                correlationId, message.MessageId);
 
-            if (payload == null) return;
+            var payload = JsonSerializer.Deserialize<OrderPayload>(message.Body.ToString());
+
+            if (payload == null)
+            {
+                _logger.LogError(
+                    "InvalidPayload | CorrelationId: {CorrelationId} | MessageId: {MessageId}",
+                    correlationId, message.MessageId);
+                return;
+            }
 
             var orderExists = await _tradingDbContext.Orders
-                 .AnyAsync(o => o.ClientOrderId == payload.ClientOrderId);
+                .AnyAsync(o => o.ClientOrderId == payload.ClientOrderId);
 
             if (!orderExists)
             {
-                _logger.LogWarning("Order not found in local database: {ClientOrderId}. ", payload.ClientOrderId);
+                _logger.LogWarning(
+                    "OrderNotFound | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}",
+                    correlationId, payload.ClientOrderId);
                 return;
             }
 
@@ -59,22 +72,26 @@ namespace OrderExecutionProvider
             var orderRowsProcessed = await _tradingDbContext.Orders
                 .Where(x => x.ClientOrderId == payload.ClientOrderId && !x.IsProcessed)
                 .ExecuteUpdateAsync(x => x
-                .SetProperty(x => x.Status, randomStatus)
-                .SetProperty(x => x.IsProcessed, true)
-                .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow));
+                    .SetProperty(x => x.Status, randomStatus)
+                    .SetProperty(x => x.IsProcessed, true)
+                    .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow));
 
-            if(orderRowsProcessed == 0)
+            if (orderRowsProcessed == 0)
             {
-                _logger.LogInformation("Order already processed by another instance: {Id}", payload.ClientOrderId);
+                _logger.LogInformation(
+                    "OrderAlreadyProcessed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}",
+                    correlationId, payload.ClientOrderId);
                 return;
             }
 
-            _logger.LogInformation("Order processed successfully: {Id}", payload.ClientOrderId);
+            _logger.LogInformation(
+                "OrderProcessed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Status: {Status}",
+                correlationId, payload.ClientOrderId, randomStatus);
 
-            await PublishOrderProcessedEvent(payload.ClientOrderId, randomStatus);
+            await PublishOrderProcessedEvent(payload.ClientOrderId, randomStatus, correlationId);
         }
 
-        private async Task PublishOrderProcessedEvent(Guid clientOrderId, OrderStatus randomStatus)
+        private async Task PublishOrderProcessedEvent(Guid clientOrderId, OrderStatus randomStatus, string correlationId)
         {
             try
             {
@@ -88,8 +105,11 @@ namespace OrderExecutionProvider
                 };
 
                 var messageBody = JsonSerializer.Serialize(eventPayload);
+
                 var message = new ServiceBusMessage(messageBody)
                 {
+                    MessageId = Guid.NewGuid().ToString(),
+                    CorrelationId = correlationId, 
                     ContentType = "application/json",
                     Subject = "OrderProcessed"
                 };
@@ -97,14 +117,14 @@ namespace OrderExecutionProvider
                 await sender.SendMessageAsync(message);
 
                 _logger.LogInformation(
-                  "Published OrderProcessed event to topic for ClientOrderId: {ClientOrderId}",
-                  clientOrderId);
+                    "EventPublishedToTopic | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Topic: order_events_topic",
+                    correlationId, clientOrderId);
             }
             catch (ServiceBusException serviceBusException)
             {
                 _logger.LogError(serviceBusException,
-                    "Topic publish failed for: {ClientOrderId} - adding entry to UnpublishedTopicMessages.",
-                    clientOrderId);
+                    "TopicPublishFailed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Error: {Message}",
+                    correlationId, clientOrderId, serviceBusException.Message);
 
                 _tradingDbContext.UnpublishedTopicMessages.Add(new UnpublishedTopicMessage
                 {
@@ -112,16 +132,21 @@ namespace OrderExecutionProvider
                     ClientOrderId = clientOrderId,
                     OrderStatus = randomStatus,
                     ProcessedAt = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    CorrelationId = correlationId 
                 });
 
                 await _tradingDbContext.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "SavedToUnpublishedTopicMessages | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}",
+                    correlationId, clientOrderId);
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 _logger.LogError(ex,
-                  "Failed to publish OrderProcessed event for ClientOrderId: {ClientOrderId}",
-                  clientOrderId);
+                    "EventPublishFailed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}",
+                    correlationId, clientOrderId);
             }
         }
     }

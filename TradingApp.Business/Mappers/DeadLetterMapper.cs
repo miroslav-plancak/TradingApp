@@ -33,13 +33,14 @@ namespace TradingApp.Business.Mappers
             return deadLetterLogs.Select(ToDeadLetterLogResponseDTO).ToList();
         }
 
-        public static DeadLetterLog ToEntity(string messageBody, System.Guid clientOrderId, string reason)
+        public static DeadLetterLog ToEntity(string messageBody, System.Guid clientOrderId, string reason, string correlationId = null)
         {
             return new DeadLetterLog
             {
                 ClientOrderId = clientOrderId,
                 MessageBody = messageBody,
                 Reason = reason,
+                CorrelationId = correlationId,
                 ResolutionNotes = "hardcoded ResolutionNotes",
                 ResolvedBy = "hardcoded ResolvedBy"
             };

@@ -25,22 +25,26 @@ namespace NotificationProcessor
             ServiceBusReceivedMessage message
         )
         {
-            _logger.LogInformation("NotificationsProcessor triggered.");
-      
-            var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body);
+            var correlationId = message.CorrelationId ?? "CorrelationId";
+
+            _logger.LogInformation("NotificationProcessor started | CorrelationId: {CorrelationId}",
+                        correlationId);
+
+            var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body.ToString());
 
             if (orderEvent == null)
             {
-                _logger.LogWarning("Received null orderEvent.");
+                _logger.LogWarning("OrderEventNull | CorrelationId: {CorrelationId}", correlationId);
                 return;
             }
 
-            _logger.LogInformation("Sending notification for Order: {ClientOrderId}", orderEvent.ClientOrderId);
-        
+            _logger.LogInformation("Sending notification for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
+                correlationId, orderEvent.ClientOrderId);
+            
             await SendNotifications(orderEvent);
 
-            _logger.LogInformation("Notification sent for Order: {ClientOrderId}", orderEvent.ClientOrderId);
-        
+            _logger.LogInformation("Notification sent for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
+                correlationId, orderEvent.ClientOrderId);
         }
 
         private async Task SendNotifications(OrderProcessedEvent orderEvent)

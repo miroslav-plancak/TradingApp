@@ -25,31 +25,37 @@ namespace TradingApp.Business.Services.Regular
 
         public Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(string messageBody, Guid clientOrderId, string reason)
         {
+            return CreateDeadLetterLogAsync(messageBody, clientOrderId, reason, null);
+        }
+
+        public Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(string messageBody, Guid clientOrderId, string reason, string correlationId)
+        {
             return CreateDeadLetterLogAsync(new CreateDeadLetterRequestDTO
             {
                 MessageBody = messageBody,
                 ClientOrderId = clientOrderId,
-                Reason = reason
+                Reason = reason,
+                CorrelationId = correlationId
             });
         }
 
         public async Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(CreateDeadLetterRequestDTO createRequest)
         {
-            _logger.LogInformation("CreateDeadLetterLog | ClientOrderId: {ClientOrderId}", createRequest.ClientOrderId);
+            _logger.LogInformation("CreateDeadLetterLog | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}", createRequest.CorrelationId, createRequest.ClientOrderId);
 
             try
             {
-                var deadLetterEntity = DeadLetterMapper.ToEntity(createRequest.MessageBody, createRequest.ClientOrderId, createRequest.Reason);
+                var deadLetterEntity = DeadLetterMapper.ToEntity(createRequest.MessageBody, createRequest.ClientOrderId, createRequest.Reason, createRequest.CorrelationId);
                 var deadLetterLog = await _deadLetterRepository.CreateDeadLetterLogAsync(deadLetterEntity);
 
-                _logger.LogInformation("DeadLetterLogCreated | Id: {Id} | ClientOrderId: {ClientOrderId}",
-                    deadLetterLog.Id, createRequest.ClientOrderId);
+                _logger.LogInformation("DeadLetterLogCreated | CorrelationId: {CorrelationId} | Id: {Id} | ClientOrderId: {ClientOrderId}",
+                    createRequest.CorrelationId, deadLetterLog.Id, createRequest.ClientOrderId);
 
                 return DeadLetterMapper.ToDeadLetterLogResponseDTO(deadLetterLog);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "CreateDeadLetterLogFailed | ClientOrderId: {ClientOrderId}", createRequest.ClientOrderId);
+                _logger.LogError(ex, "CreateDeadLetterLogFailed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}", createRequest.CorrelationId, createRequest.ClientOrderId);
                 throw new Exception($"Failed to create dead letter log for client order {createRequest.ClientOrderId}", ex);
             }
         }

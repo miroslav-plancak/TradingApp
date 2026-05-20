@@ -1,3 +1,4 @@
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -31,26 +32,33 @@ namespace DeadLetterQueueProcessor
         public async Task Run
         (
             [ServiceBusTrigger(
-            queueName: "CREATE_ORDER_QUEUE/$DeadLetterQueue",
-            Connection = "ServiceBusConnection")]
-            string messageBody
+                queueName: "CREATE_ORDER_QUEUE/$DeadLetterQueue",
+                Connection = "ServiceBusConnection")]
+            ServiceBusReceivedMessage message,
+            ServiceBusMessageActions messageActions
         )
         {
-            _logger.LogWarning("Dead Letter Queue message received at: {Time}", DateTimeOffset.UtcNow);
+            var correlationId = message.CorrelationId ?? "UNKNOWN";
+
+            _logger.LogWarning(
+                "DeadLetterMessageReceived | CorrelationId: {CorrelationId} | MessageId: {MessageId} | Time: {Time}",
+                correlationId, message.MessageId, DateTimeOffset.UtcNow);
 
             try
             {
-                var payload = JsonSerializer.Deserialize<OrderPayload>(messageBody);
+                var payload = JsonSerializer.Deserialize<OrderPayload>(message.Body.ToString());
 
                 if (payload == null)
                 {
-                    _logger.LogError("Failed to deserialize dead letter message: {MessageBody}", messageBody);
+                    _logger.LogError(
+                        "DeadLetterDeserializationFailed | CorrelationId: {CorrelationId} | MessageBody: {MessageBody}",
+                        correlationId, message.Body.ToString());
                     return;
                 }
 
                 _logger.LogWarning(
-                    "Processing dead letter for Order ClientOrderId: {ClientOrderId}",
-                    payload.ClientOrderId);
+                    "ProcessingDeadLetter | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}",
+                    correlationId, payload.ClientOrderId);
 
                 var order = await _tradingDbContext.Orders
                     .FirstOrDefaultAsync(x => x.ClientOrderId == payload.ClientOrderId);
@@ -58,13 +66,14 @@ namespace DeadLetterQueueProcessor
                 if (order == null)
                 {
                     _logger.LogError(
-                        "Order not found in database for dead letter message. ClientOrderId: {ClientOrderId}",
-                        payload.ClientOrderId);
+                        "OrderNotFoundInDatabase | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}",
+                        correlationId, payload.ClientOrderId);
 
                     await _deadLetterService.CreateDeadLetterLogAsync(
-                        messageBody,
+                        message.Body.ToString(),
                         payload.ClientOrderId,
-                        "Order not found in the database.");
+                        "Order not found in the database.",
+                        correlationId);
 
                     return;
                 }
@@ -72,17 +81,16 @@ namespace DeadLetterQueueProcessor
                 if (order.IsProcessed)
                 {
                     _logger.LogInformation(
-                        "Order already processed, dead letter can be ignored. ClientOrderId: {ClientOrderId}, Status: {Status}",
-                        payload.ClientOrderId,
-                        order.Status);
+                        "OrderAlreadyProcessed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Status: {Status}",
+                        correlationId, payload.ClientOrderId, order.Status);
 
                     await _deadLetterService.MarkOutboxMessageAsProcessedAsync(payload.ClientOrderId);
                     return;
                 }
 
                 _logger.LogError(
-                    "Order failed to process and ended up in DLQ. ClientOrderId: {ClientOrderId}",
-                    payload.ClientOrderId);
+                    "OrderFailedAndInDLQ | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}",
+                    correlationId, payload.ClientOrderId);
 
                 order.Status = OrderStatus.REJECTED;
                 order.UpdatedAt = DateTimeOffset.UtcNow;
@@ -92,33 +100,32 @@ namespace DeadLetterQueueProcessor
                 await _deadLetterService.MarkOutboxMessageAsProcessedAsync(payload.ClientOrderId);
 
                 await _deadLetterService.CreateDeadLetterLogAsync(
-                    messageBody,
+                    message.Body.ToString(),
                     payload.ClientOrderId,
-                    "Max retries exceeded");
+                    "Max retries exceeded",
+                    correlationId);
 
-                await SendAlertToOpsTeam(payload.ClientOrderId);
+                await SendAlertToOpsTeam(payload.ClientOrderId, correlationId);
 
                 _logger.LogInformation(
-                    "Dead letter message processed. Order marked as REJECTED. ClientOrderId: {ClientOrderId}",
-                    payload.ClientOrderId);
+                    "DeadLetterProcessed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Status: REJECTED",
+                    correlationId, payload.ClientOrderId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(
-                    ex,
-                    "Error processing dead letter message: {MessageBody}",
-                    messageBody);
+                _logger.LogError(ex,
+                    "DeadLetterProcessingFailed | CorrelationId: {CorrelationId} | MessageBody: {MessageBody}",
+                    correlationId, message.Body.ToString());
 
                 throw;
             }
         }
 
-        private async Task SendAlertToOpsTeam(Guid clientOrderId)
+        private async Task SendAlertToOpsTeam(Guid clientOrderId, string correlationId)
         {
             _logger.LogWarning(
-                "Dead letter detected - ClientOrderId: {ClientOrderId}",
-                clientOrderId
-                );
+                "DeadLetterAlertSent | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}",
+                correlationId, clientOrderId);
 
             await Task.CompletedTask;
         }

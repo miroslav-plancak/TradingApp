@@ -24,7 +24,6 @@ namespace TradingApp.Business.Repositories
 
             order.Id = Guid.NewGuid();
             order.ClientOrderId = Guid.NewGuid();
-            order.CorrelationId = Guid.NewGuid().ToString();
             order.CreatedAt = DateTimeOffset.UtcNow;
             order.UpdatedAt = DateTimeOffset.UtcNow;
 

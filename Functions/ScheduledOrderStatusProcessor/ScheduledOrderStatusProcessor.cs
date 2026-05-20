@@ -4,24 +4,26 @@ using Microsoft.Extensions.Logging;
 using TradingApp.Domain;
 using TradingApp.Domain.Models.Enums;
 
-namespace ScheduledOrderStatusProcessor 
-{ 
-
+namespace ScheduledOrderStatusProcessor
+{
     public class ScheduledOrderStatusProcessor
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<ScheduledOrderStatusProcessor> _logger;
         private readonly TradingDbContext _tradingDbContext;
 
-        public ScheduledOrderStatusProcessor(ILoggerFactory loggerFactory, TradingDbContext tradingDbContext)
+        public ScheduledOrderStatusProcessor(
+            ILogger<ScheduledOrderStatusProcessor> logger,
+            TradingDbContext tradingDbContext)
         {
-            _logger = loggerFactory.CreateLogger<ScheduledOrderStatusProcessor>();
+            _logger = logger;
             _tradingDbContext = tradingDbContext;
         }
 
         [Function("ScheduledOrderStatusProcessor")]
         public async Task Run([TimerTrigger("0 */1 * * * *")] TimerInfo myTimer)
         {
-            _logger.LogInformation("ScheduledOrderStatusProcessor tiggered at: {triggerTime}.", DateTime.UtcNow);
+            _logger.LogInformation("ScheduledOrderStatusProcessor triggered at: {TriggerTime}",
+                DateTimeOffset.UtcNow);
 
             var pendingAckOrders = await _tradingDbContext.Orders
                 .Where(ao => ao.Status == OrderStatus.ACKNOWLEDGED)
@@ -29,19 +31,27 @@ namespace ScheduledOrderStatusProcessor
 
             if (pendingAckOrders.Count == 0)
             {
-                _logger.LogInformation("No ACKNOWLEDGED status orders found.");
+                _logger.LogInformation("NoAcknowledgedOrders | No orders to promote to FILLED");
                 return;
             }
 
+            _logger.LogInformation("PromotingOrders | Found {Count} ACKNOWLEDGED orders to promote",
+                pendingAckOrders.Count);
+
             foreach (var pendingAckOrder in pendingAckOrders)
             {
+                _logger.LogInformation(
+                    "PromotingOrder | CorrelationId: {CorrelationId} | OrderId: {OrderId} | ClientOrderId: {ClientOrderId} | ACKNOWLEDGED ? FILLED",
+                    pendingAckOrder.CorrelationId, pendingAckOrder.Id, pendingAckOrder.ClientOrderId);
+
                 pendingAckOrder.Status = OrderStatus.FILLED;
-                pendingAckOrder.UpdatedAt = DateTime.UtcNow;
+                pendingAckOrder.UpdatedAt = DateTimeOffset.UtcNow;
             }
 
             await _tradingDbContext.SaveChangesAsync();
 
-            _logger.LogInformation("Updated {count} ACKNOWLEDGED orders to FILLED.", pendingAckOrders.Count);
+            _logger.LogInformation("OrdersPromoted | Updated {Count} orders to FILLED",
+                pendingAckOrders.Count);
         }
     }
 }

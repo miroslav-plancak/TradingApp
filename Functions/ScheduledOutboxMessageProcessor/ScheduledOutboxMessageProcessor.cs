@@ -12,19 +12,19 @@ namespace ScheduledOutboxMessageProcessor
 {
     public class ScheduledOutboxMessageProcessor
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<ScheduledOutboxMessageProcessor> _logger;
         private readonly TradingDbContext _tradingDbContext;
         private readonly ServiceBusClient _client;
         private readonly ServiceBusSender _sender;
 
         public ScheduledOutboxMessageProcessor
         (
-            ILoggerFactory loggerFactory,
+            ILogger<ScheduledOutboxMessageProcessor> logger,
             TradingDbContext tradingDbContext,
             IConfiguration configuration
         )
         {
-            _logger = loggerFactory.CreateLogger<ScheduledOutboxMessageProcessor>();
+            _logger = logger;
             _tradingDbContext = tradingDbContext;
             var connectionString = configuration["ServiceBusConnectionString"];
             _client = new ServiceBusClient(connectionString);
@@ -34,7 +34,7 @@ namespace ScheduledOutboxMessageProcessor
         [Function("ScheduledOutboxMessageProcessor")]
         public async Task Run([TimerTrigger("0 */1 * * * *")] TimerInfo myTimer)
         {
-            _logger.LogInformation("ScheduledOutboxMessageProcessor triggered at: {triggerTime}.",
+            _logger.LogInformation("ScheduledOutboxMessageProcessor triggered at: {TriggerTime}",
                 DateTimeOffset.UtcNow);
 
             await QuarantineExhaustedMessages();
@@ -45,7 +45,7 @@ namespace ScheduledOutboxMessageProcessor
             {
                 await AutoRecoverResurrectedMessages();
             }
-           
+
             await _tradingDbContext.SaveChangesAsync();
         }
 
@@ -57,9 +57,16 @@ namespace ScheduledOutboxMessageProcessor
 
             if (exhaustedOutboxMessages.Count == 0) return;
 
+            _logger.LogInformation("QuarantinePhase | Found {Count} exhausted messages",
+                exhaustedOutboxMessages.Count);
+
             foreach (var exOutboxMsg in exhaustedOutboxMessages)
             {
                 Guid? clientOrderId = Guid.TryParse(exOutboxMsg.Payload, out var parsed) ? parsed : null;
+
+                _logger.LogWarning(
+                    "QuarantiningMessage | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | Reason: {Reason} | RetryCount: {Count}",
+                    exOutboxMsg.CorrelationId, exOutboxMsg.Id, exOutboxMsg.RetryReason, exOutboxMsg.RetryCount);
 
                 _tradingDbContext.QuarantinedOutboxMessages.Add(new QuarantinedOutboxMessage
                 {
@@ -70,14 +77,11 @@ namespace ScheduledOutboxMessageProcessor
                     Reason = exOutboxMsg.RetryReason,
                     FinalRetryCount = exOutboxMsg.RetryCount,
                     QuarantinedAt = DateTimeOffset.UtcNow,
-                    ErrorMessage = exOutboxMsg.LastError
+                    ErrorMessage = exOutboxMsg.LastError,
+                    CorrelationId = exOutboxMsg.CorrelationId 
                 });
 
                 exOutboxMsg.ProcessedAt = DateTimeOffset.UtcNow;
-
-                _logger.LogWarning(
-                    "Quarantined outbox message {Id}, reason: {Reason}, retries: {Count}",
-                    exOutboxMsg.Id, exOutboxMsg.RetryReason, exOutboxMsg.RetryCount);
             }
         }
 
@@ -90,6 +94,9 @@ namespace ScheduledOutboxMessageProcessor
                 .ToListAsync();
 
             if (outboxMessages.Count == 0) return false;
+
+            _logger.LogInformation("ProcessingPhase | Found {Count} pending messages",
+                outboxMessages.Count);
 
             var clientOrderIds = outboxMessages
                 .Where(x => Guid.TryParse(x.Payload, out _))
@@ -118,31 +125,52 @@ namespace ScheduledOutboxMessageProcessor
                     {
                         if (alreadyProcessedOrders.Contains(clientOrderId))
                         {
+                            _logger.LogInformation(
+                                "OrderAlreadyProcessed | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | ClientOrderId: {ClientOrderId}",
+                                outboxMessage.CorrelationId, outboxMessage.Id, clientOrderId);
+
                             outboxMessage.ProcessedAt = DateTimeOffset.UtcNow;
                             continue;
                         }
 
-                        await NotifyServiceBusCreateOrderQueue(clientOrderId);
+                        _logger.LogInformation(
+                            "SendingToServiceBus | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | ClientOrderId: {ClientOrderId}",
+                            outboxMessage.CorrelationId, outboxMessage.Id, clientOrderId);
+
+                        await NotifyServiceBusCreateOrderQueue(clientOrderId, outboxMessage.CorrelationId);
                         outboxMessage.ProcessedAt = DateTimeOffset.UtcNow;
                         isServiceBusHealthy = true;
+
+                        _logger.LogInformation(
+                            "SentToServiceBus | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | Queue: CREATE_ORDER_QUEUE",
+                            outboxMessage.CorrelationId, outboxMessage.Id);
                     }
                     else
                     {
-                        _logger.LogError("Invalid guid payload: {Payload}", outboxMessage.Payload);
+                        _logger.LogError(
+                           "InvalidPayload | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | Payload: {Payload}",
+                            outboxMessage.CorrelationId, outboxMessage.Id, outboxMessage.Payload);
+
                         outboxMessage.RetryCount++;
                         outboxMessage.RetryReason = OutboxRetryReason.InvalidPayload;
                     }
                 }
                 catch (ServiceBusException serviceBusException)
                 {
-                    _logger.LogError(serviceBusException, "Service Bus error for outbox message {Id}", outboxMessage.Id);
+                    _logger.LogError(serviceBusException,
+                        "ServiceBusError | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | Error: {Message}",
+                        outboxMessage.CorrelationId, outboxMessage.Id, serviceBusException.Message);
+
                     outboxMessage.RetryCount++;
                     outboxMessage.RetryReason = OutboxRetryReason.ServiceBusUnavailable;
                     outboxMessage.LastError = serviceBusException.Message;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to process outbox message {Id}", outboxMessage.Id);
+                    _logger.LogError(ex,
+                        "OutboxProcessingFailed | CorrelationId: {CorrelationId} | OutboxId: {OutboxId}",
+                        outboxMessage.CorrelationId, outboxMessage.Id);
+
                     outboxMessage.RetryCount++;
                     outboxMessage.RetryReason = OutboxRetryReason.Unknown;
                 }
@@ -161,6 +189,9 @@ namespace ScheduledOutboxMessageProcessor
 
             if (resurrectCandidates.Count == 0) return;
 
+            _logger.LogInformation("AutoRecoveryPhase | Found {Count} resurrection candidates",
+                resurrectCandidates.Count);
+
             var originalMessageIds = resurrectCandidates
                 .Select(c => c.OriginalOutboxMessageId)
                 .ToHashSet();
@@ -173,6 +204,10 @@ namespace ScheduledOutboxMessageProcessor
             {
                 if (originalMessages.TryGetValue(candidate.OriginalOutboxMessageId, out var originalOutboxMessage))
                 {
+                    _logger.LogInformation(
+                        "ResurrectingMessage | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | QuarantinedId: {QuarantinedId}",
+                        candidate.CorrelationId, originalOutboxMessage.Id, candidate.Id);
+
                     originalOutboxMessage.ProcessedAt = null;
                     originalOutboxMessage.RetryCount = 4;
                     originalOutboxMessage.RetryReason = OutboxRetryReason.None;
@@ -180,23 +215,27 @@ namespace ScheduledOutboxMessageProcessor
                     candidate.IsResurrected = true;
                     candidate.ResurrectedAt = DateTimeOffset.UtcNow;
                     candidate.ResolutionNotes = "Auto-resurrected: Service Bus connectivity restored";
-
-                    _logger.LogInformation(
-                        "Resurrected outbox message {Id} from quarantine — Service Bus is healthy",
-                        originalOutboxMessage.Id);
                 }
             }
 
             _logger.LogInformation(
-                "Service Bus healthy — resurrected {Count} transient-failure messages",
+                "AutoRecoveryComplete | Resurrected {Count} messages",
                 resurrectCandidates.Count);
         }
 
-        private async Task NotifyServiceBusCreateOrderQueue(Guid clientOrderId)
+        private async Task NotifyServiceBusCreateOrderQueue(Guid clientOrderId, string correlationId)
         {
             var payload = new { ClientOrderId = clientOrderId };
-            var json = JsonSerializer.Serialize(payload);
-            await _sender.SendMessageAsync(new ServiceBusMessage(json));
+
+            var serializedPayload = JsonSerializer.Serialize(payload);
+
+            var message = new ServiceBusMessage(serializedPayload)
+            {
+                MessageId = Guid.NewGuid().ToString(),
+                CorrelationId = correlationId
+            };
+
+            await _sender.SendMessageAsync(message);
         }
     }
 }

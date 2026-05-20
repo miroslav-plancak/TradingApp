@@ -9,6 +9,7 @@ namespace TradingApp.Business.Interfaces.Services
     public interface IDeadLetterService
     {
         Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(string messageBody, Guid clientOrderId, string reason);
+        Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(string messageBody, Guid clientOrderId, string reason, string correlationId);
         Task<DeadLetterLogResponseDTO> CreateDeadLetterLogAsync(CreateDeadLetterRequestDTO createRequest);
         Task<DeadLetterLogResponseDTO> GetDeadLetterLogByIdAsync(Guid id);
         Task<DeadLetterLogResponseDTO> GetByClientOrderIdAsync(Guid clientOrderId);
