@@ -1,4 +1,4 @@
-using Azure.Messaging.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -27,7 +27,7 @@ namespace NotificationProcessor
         {
             var correlationId = message.CorrelationId ?? "CorrelationId";
 
-            _logger.LogInformation("NotificationProcessor started | CorrelationId: {CorrelationId}",
+            _logger.LogWarning("NotificationProcessor started | CorrelationId: {CorrelationId}",
                         correlationId);
 
             var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body.ToString());
@@ -38,12 +38,12 @@ namespace NotificationProcessor
                 return;
             }
 
-            _logger.LogInformation("Sending notification for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
+            _logger.LogWarning("Sending notification for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
                 correlationId, orderEvent.ClientOrderId);
             
             await SendNotifications(orderEvent);
 
-            _logger.LogInformation("Notification sent for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
+            _logger.LogWarning("Notification sent for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
                 correlationId, orderEvent.ClientOrderId);
         }
 

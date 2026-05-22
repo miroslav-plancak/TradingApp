@@ -1,4 +1,4 @@
-using Microsoft.Azure.Functions.Worker;
+﻿using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TradingApp.Domain;
@@ -22,7 +22,7 @@ namespace ScheduledOrderStatusProcessor
         [Function("ScheduledOrderStatusProcessor")]
         public async Task Run([TimerTrigger("0 */1 * * * *")] TimerInfo myTimer)
         {
-            _logger.LogInformation("ScheduledOrderStatusProcessor triggered at: {TriggerTime}",
+            _logger.LogWarning("ScheduledOrderStatusProcessor triggered at: {TriggerTime}",
                 DateTimeOffset.UtcNow);
 
             var pendingAckOrders = await _tradingDbContext.Orders
@@ -31,16 +31,16 @@ namespace ScheduledOrderStatusProcessor
 
             if (pendingAckOrders.Count == 0)
             {
-                _logger.LogInformation("NoAcknowledgedOrders | No orders to promote to FILLED");
+                _logger.LogWarning("NoAcknowledgedOrders | No orders to promote to FILLED");
                 return;
             }
 
-            _logger.LogInformation("PromotingOrders | Found {Count} ACKNOWLEDGED orders to promote",
+            _logger.LogWarning("PromotingOrders | Found {Count} ACKNOWLEDGED orders to promote",
                 pendingAckOrders.Count);
 
             foreach (var pendingAckOrder in pendingAckOrders)
             {
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "PromotingOrder | CorrelationId: {CorrelationId} | OrderId: {OrderId} | ClientOrderId: {ClientOrderId} | ACKNOWLEDGED ? FILLED",
                     pendingAckOrder.CorrelationId, pendingAckOrder.Id, pendingAckOrder.ClientOrderId);
 
@@ -50,7 +50,7 @@ namespace ScheduledOrderStatusProcessor
 
             await _tradingDbContext.SaveChangesAsync();
 
-            _logger.LogInformation("OrdersPromoted | Updated {Count} orders to FILLED",
+            _logger.LogWarning("OrdersPromoted | Updated {Count} orders to FILLED",
                 pendingAckOrders.Count);
         }
     }

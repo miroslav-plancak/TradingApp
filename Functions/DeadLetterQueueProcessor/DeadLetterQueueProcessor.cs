@@ -1,4 +1,4 @@
-using Azure.Messaging.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -80,7 +80,7 @@ namespace DeadLetterQueueProcessor
 
                 if (order.IsProcessed)
                 {
-                    _logger.LogInformation(
+                    _logger.LogWarning(
                         "OrderAlreadyProcessed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Status: {Status}",
                         correlationId, payload.ClientOrderId, order.Status);
 
@@ -107,7 +107,7 @@ namespace DeadLetterQueueProcessor
 
                 await SendAlertToOpsTeam(payload.ClientOrderId, correlationId);
 
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "DeadLetterProcessed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Status: REJECTED",
                     correlationId, payload.ClientOrderId);
             }

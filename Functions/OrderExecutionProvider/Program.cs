@@ -14,8 +14,7 @@ builder.ConfigureFunctionsWebApplication();
 
 builder.Configuration.AddAzureKeyVault(
     new Uri("https://tradingapp-demo-kv.vault.azure.net/"),
-    new DefaultAzureCredential()
-    );
+    new DefaultAzureCredential());
 
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
@@ -26,9 +25,9 @@ builder.Services.AddDbContext<TradingDbContext>(options =>
 );
 
 builder.Services.AddSingleton(sp =>
-    {
-        var connectionString = Environment.GetEnvironmentVariable("ServiceBusConnection");
-        return new ServiceBusClient(connectionString);
-    });
+{
+    var connectionString = Environment.GetEnvironmentVariable("ServiceBusConnection");
+    return new ServiceBusClient(connectionString);
+});
 
 builder.Build().Run();

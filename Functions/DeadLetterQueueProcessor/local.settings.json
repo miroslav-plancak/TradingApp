@@ -4,6 +4,7 @@
     "AzureWebJobsStorage": "@Microsoft.KeyVault(SecretUri=https://tradingapp-demo-kv.vault.azure.net/secrets/StorageConnectionString/)",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "SqlConnectionString": "@Microsoft.KeyVault(SecretUri=https://tradingapp-demo-kv.vault.azure.net/secrets/SqlConnectionString/)",
-    "ServiceBusConnection": "@Microsoft.KeyVault(SecretUri=https://tradingapp-demo-kv.vault.azure.net/secrets/ServiceBusConnectionString/)"
+    "ServiceBusConnection": "@Microsoft.KeyVault(SecretUri=https://tradingapp-demo-kv.vault.azure.net/secrets/ServiceBusConnectionString/)",
+    "APPLICATIONINSIGHTS_CONNECTION_STRING": "@Microsoft.KeyVault(SecretUri=https://tradingapp-demo-kv.vault.azure.net/secrets/APPLICATIONINSIGHTS-CONNECTION-STRING/)"
   }
 }

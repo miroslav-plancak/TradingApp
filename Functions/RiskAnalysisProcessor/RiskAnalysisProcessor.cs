@@ -1,4 +1,4 @@
-using Azure.Messaging.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -27,7 +27,7 @@ namespace RiskAnalysisProcessor
         {
             var correlationId = message.CorrelationId ?? "CorrelationId";
 
-            _logger.LogInformation("RiskAnalysisProcessor started | CorrelationId: {CorrelationId}",
+            _logger.LogWarning("RiskAnalysisProcessor started | CorrelationId: {CorrelationId}",
                         correlationId);
 
             var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body.ToString());
@@ -38,12 +38,12 @@ namespace RiskAnalysisProcessor
                 return;
             }
 
-            _logger.LogInformation("Analyzing risk for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
+            _logger.LogWarning("Analyzing risk for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
                 correlationId, orderEvent.ClientOrderId);
 
             var riskScore = await CalculateRiskScore(orderEvent);
 
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "Risk analysis complete with CorrelationId {CorrelationId} " +
                 "| ClientOrderId: {ClientOrderId} | RiskScore: {RiskScore}",
                 correlationId,

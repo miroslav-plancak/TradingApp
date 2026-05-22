@@ -41,7 +41,7 @@ namespace OrderExecutionProvider
         {
             var correlationId = message.CorrelationId ?? "CorrelationId";
 
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "OrderExecutionStarted | CorrelationId: {CorrelationId} | MessageId: {MessageId}",
                 correlationId, message.MessageId);
 
@@ -78,13 +78,13 @@ namespace OrderExecutionProvider
 
             if (orderRowsProcessed == 0)
             {
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "OrderAlreadyProcessed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}",
                     correlationId, payload.ClientOrderId);
                 return;
             }
 
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "OrderProcessed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Status: {Status}",
                 correlationId, payload.ClientOrderId, randomStatus);
 
@@ -116,7 +116,7 @@ namespace OrderExecutionProvider
 
                 await sender.SendMessageAsync(message);
 
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "EventPublishedToTopic | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Topic: order_events_topic",
                     correlationId, clientOrderId);
             }
@@ -138,7 +138,7 @@ namespace OrderExecutionProvider
 
                 await _tradingDbContext.SaveChangesAsync();
 
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "SavedToUnpublishedTopicMessages | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}",
                     correlationId, clientOrderId);
             }

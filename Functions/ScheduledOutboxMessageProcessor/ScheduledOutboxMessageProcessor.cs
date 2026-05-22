@@ -1,4 +1,4 @@
-using Azure.Messaging.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -34,7 +34,7 @@ namespace ScheduledOutboxMessageProcessor
         [Function("ScheduledOutboxMessageProcessor")]
         public async Task Run([TimerTrigger("0 */1 * * * *")] TimerInfo myTimer)
         {
-            _logger.LogInformation("ScheduledOutboxMessageProcessor triggered at: {TriggerTime}",
+            _logger.LogWarning("ScheduledOutboxMessageProcessor triggered at: {TriggerTime}",
                 DateTimeOffset.UtcNow);
 
             await QuarantineExhaustedMessages();
@@ -57,7 +57,7 @@ namespace ScheduledOutboxMessageProcessor
 
             if (exhaustedOutboxMessages.Count == 0) return;
 
-            _logger.LogInformation("QuarantinePhase | Found {Count} exhausted messages",
+            _logger.LogWarning("QuarantinePhase | Found {Count} exhausted messages",
                 exhaustedOutboxMessages.Count);
 
             foreach (var exOutboxMsg in exhaustedOutboxMessages)
@@ -95,7 +95,7 @@ namespace ScheduledOutboxMessageProcessor
 
             if (outboxMessages.Count == 0) return false;
 
-            _logger.LogInformation("ProcessingPhase | Found {Count} pending messages",
+            _logger.LogWarning("ProcessingPhase | Found {Count} pending messages",
                 outboxMessages.Count);
 
             var clientOrderIds = outboxMessages
@@ -125,7 +125,7 @@ namespace ScheduledOutboxMessageProcessor
                     {
                         if (alreadyProcessedOrders.Contains(clientOrderId))
                         {
-                            _logger.LogInformation(
+                            _logger.LogWarning(
                                 "OrderAlreadyProcessed | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | ClientOrderId: {ClientOrderId}",
                                 outboxMessage.CorrelationId, outboxMessage.Id, clientOrderId);
 
@@ -133,7 +133,7 @@ namespace ScheduledOutboxMessageProcessor
                             continue;
                         }
 
-                        _logger.LogInformation(
+                        _logger.LogWarning(
                             "SendingToServiceBus | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | ClientOrderId: {ClientOrderId}",
                             outboxMessage.CorrelationId, outboxMessage.Id, clientOrderId);
 
@@ -141,7 +141,7 @@ namespace ScheduledOutboxMessageProcessor
                         outboxMessage.ProcessedAt = DateTimeOffset.UtcNow;
                         isServiceBusHealthy = true;
 
-                        _logger.LogInformation(
+                        _logger.LogWarning(
                             "SentToServiceBus | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | Queue: CREATE_ORDER_QUEUE",
                             outboxMessage.CorrelationId, outboxMessage.Id);
                     }
@@ -189,7 +189,7 @@ namespace ScheduledOutboxMessageProcessor
 
             if (resurrectCandidates.Count == 0) return;
 
-            _logger.LogInformation("AutoRecoveryPhase | Found {Count} resurrection candidates",
+            _logger.LogWarning("AutoRecoveryPhase | Found {Count} resurrection candidates",
                 resurrectCandidates.Count);
 
             var originalMessageIds = resurrectCandidates
@@ -204,7 +204,7 @@ namespace ScheduledOutboxMessageProcessor
             {
                 if (originalMessages.TryGetValue(candidate.OriginalOutboxMessageId, out var originalOutboxMessage))
                 {
-                    _logger.LogInformation(
+                    _logger.LogWarning(
                         "ResurrectingMessage | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | QuarantinedId: {QuarantinedId}",
                         candidate.CorrelationId, originalOutboxMessage.Id, candidate.Id);
 
@@ -218,7 +218,7 @@ namespace ScheduledOutboxMessageProcessor
                 }
             }
 
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "AutoRecoveryComplete | Resurrected {Count} messages",
                 resurrectCandidates.Count);
         }

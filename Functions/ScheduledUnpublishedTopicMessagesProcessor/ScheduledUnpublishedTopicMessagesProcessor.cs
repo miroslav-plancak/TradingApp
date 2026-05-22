@@ -1,4 +1,4 @@
-using Azure.Messaging.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -31,7 +31,7 @@ namespace ScheduledUnpublishedTopicMessagesProcessor
         [Function("ScheduledUnpublishedTopicMessagesProcessor")]
         public async Task Run([TimerTrigger("0 */1 * * * *")] TimerInfo myTimer)
         {
-            _logger.LogInformation("ScheduledUnpublishedTopicMessagesProcessor triggered at: {TriggerTime}",
+            _logger.LogWarning("ScheduledUnpublishedTopicMessagesProcessor triggered at: {TriggerTime}",
                 DateTimeOffset.UtcNow);
 
             var unpublishedMessages = await _tradingDbContext.UnpublishedTopicMessages
@@ -42,18 +42,18 @@ namespace ScheduledUnpublishedTopicMessagesProcessor
 
             if (unpublishedMessages.Count == 0)
             {
-                _logger.LogInformation("NoUnpublishedMessages | No messages to retry");
+                _logger.LogWarning("NoUnpublishedMessages | No messages to retry");
                 return;
             }
 
-            _logger.LogInformation("RetryingUnpublishedMessages | Found {Count} messages to retry",
+            _logger.LogWarning("RetryingUnpublishedMessages | Found {Count} messages to retry",
                 unpublishedMessages.Count);
 
             foreach (var unpublishedMessage in unpublishedMessages)
             {
                 try
                 {
-                    _logger.LogInformation(
+                    _logger.LogWarning(
                         "RetryingTopicPublish | CorrelationId: {CorrelationId} | UnpublishedId: {UnpublishedId} | ClientOrderId: {ClientOrderId}",
                         unpublishedMessage.CorrelationId, unpublishedMessage.Id, unpublishedMessage.ClientOrderId);
 
@@ -78,7 +78,7 @@ namespace ScheduledUnpublishedTopicMessagesProcessor
 
                     unpublishedMessage.PublishedAt = DateTimeOffset.UtcNow;
 
-                    _logger.LogInformation(
+                    _logger.LogWarning(
                         "TopicPublishRetrySucceeded | CorrelationId: {CorrelationId} | UnpublishedId: {UnpublishedId}",
                         unpublishedMessage.CorrelationId, unpublishedMessage.Id);
                 }
@@ -103,7 +103,7 @@ namespace ScheduledUnpublishedTopicMessagesProcessor
 
             await _tradingDbContext.SaveChangesAsync();
 
-            _logger.LogInformation("RetryProcessingComplete | Processed {Count} unpublished messages",
+            _logger.LogWarning("RetryProcessingComplete | Processed {Count} unpublished messages",
                 unpublishedMessages.Count);
         }
     }

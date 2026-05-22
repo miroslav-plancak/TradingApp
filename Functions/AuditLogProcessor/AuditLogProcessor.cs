@@ -1,4 +1,4 @@
-using Azure.Messaging.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -27,7 +27,7 @@ namespace AuditLogProcessor
         {
             var correlationId = message.CorrelationId ?? "CorrelationId";
 
-            _logger.LogInformation("AuditLogProcessor started | CorrelationId: {CorrelationId}",
+            _logger.LogWarning("AuditLogProcessor started | CorrelationId: {CorrelationId}",
                         correlationId);
 
             var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body.ToString());
@@ -38,12 +38,12 @@ namespace AuditLogProcessor
                 return;
             }
 
-            _logger.LogInformation("Writing audit log for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
+            _logger.LogWarning("Writing audit log for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
                 correlationId, orderEvent.ClientOrderId);
 
             await WriteAuditLog(orderEvent);
 
-            _logger.LogInformation("Audit log written for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
+            _logger.LogWarning("Audit log written for Order with CorrelationId: {CorrelationId} | ClientOrderId {ClientOrderId}",
                 correlationId, orderEvent.ClientOrderId);
 
         }
