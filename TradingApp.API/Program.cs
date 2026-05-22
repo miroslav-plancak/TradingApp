@@ -1,26 +1,35 @@
+﻿using Azure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
 using TradingApp.Business;
 using TradingApp.Business.Middleware;
-using TradingApp.Business.Interfaces.Logger;
-using TradingApp.Business.Logger;
 using TradingApp.Domain;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddApplicationInsightsTelemetry();
+var keyVaultUrl = new Uri("https://tradingapp-demo-kv.vault.azure.net/");
+var credential = new DefaultAzureCredential();
+
+var secretClient = new Azure.Security.KeyVault.Secrets.SecretClient(keyVaultUrl, credential);
+
+builder.Configuration.AddAzureKeyVault(keyVaultUrl, credential);
+
+var aiSecret = secretClient.GetSecret("APPLICATIONINSIGHTS-CONNECTION-STRING").Value.Value;
+
+builder.Services.AddApplicationInsightsTelemetry(options =>
+{
+    options.ConnectionString = aiSecret;
+    options.EnableAdaptiveSampling = false;
+});
 
 builder.Services.AddDbContext<TradingDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-    
-builder.Services.AddSingleton<ILogger, TradingAppLogger>();
 
 builder.Services.AddControllers();
-
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -29,12 +38,7 @@ builder.Services.RegisterBusiness();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
-        builder =>
-        {
-            builder.AllowAnyOrigin()
-                   .AllowAnyMethod()
-                   .AllowAnyHeader();
-        });
+        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
 var app = builder.Build();
@@ -42,7 +46,6 @@ var app = builder.Build();
 app.UseCors("AllowAll");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -50,9 +53,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

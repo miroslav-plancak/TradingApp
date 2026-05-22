@@ -114,6 +114,10 @@ namespace OrderExecutionProvider
                     Subject = "OrderProcessed"
                 };
 
+                _logger.LogWarning(
+                    "PublishingEventToTopic | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Topic: order_events_topic",
+                    correlationId, clientOrderId);
+
                 await sender.SendMessageAsync(message);
 
                 _logger.LogWarning(
