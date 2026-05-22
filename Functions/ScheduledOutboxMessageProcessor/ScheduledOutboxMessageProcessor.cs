@@ -1,4 +1,5 @@
 ﻿using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +17,7 @@ namespace ScheduledOutboxMessageProcessor
         private readonly TradingDbContext _tradingDbContext;
         private readonly ServiceBusClient _client;
         private readonly ServiceBusSender _sender;
+        private readonly string _connectionString;
 
         public ScheduledOutboxMessageProcessor
         (
@@ -26,8 +28,8 @@ namespace ScheduledOutboxMessageProcessor
         {
             _logger = logger;
             _tradingDbContext = tradingDbContext;
-            var connectionString = configuration["ServiceBusConnectionString"];
-            _client = new ServiceBusClient(connectionString);
+            _connectionString = configuration["ServiceBusConnectionString"]!;
+            _client = new ServiceBusClient(_connectionString);
             _sender = _client.CreateSender("CREATE_ORDER_QUEUE");
         }
 
@@ -39,11 +41,19 @@ namespace ScheduledOutboxMessageProcessor
 
             await QuarantineExhaustedMessages();
 
-            bool isServiceBusHealthy = await ProcessPendingMessages();
+            var isServiceBusReachable =  await IsServiceBusReachableAsync();
 
-            if (isServiceBusHealthy)
+            if (isServiceBusReachable)
             {
+                await ProcessPendingMessages();
                 await AutoRecoverResurrectedMessages();
+            }
+            else 
+            {
+                _logger.LogWarning(
+                    "ServiceBusDown | Skipping ProcessPendingMessages() and" +
+                    " AutoRecoverRessurectedMessages() this cyclye."
+                    );
             }
 
             await _tradingDbContext.SaveChangesAsync();
@@ -60,32 +70,32 @@ namespace ScheduledOutboxMessageProcessor
             _logger.LogWarning("QuarantinePhase | Found {Count} exhausted messages",
                 exhaustedOutboxMessages.Count);
 
-            foreach (var exOutboxMsg in exhaustedOutboxMessages)
+            foreach (var exObMsg in exhaustedOutboxMessages)
             {
-                Guid? clientOrderId = Guid.TryParse(exOutboxMsg.Payload, out var parsed) ? parsed : null;
+                Guid? clientOrderId = Guid.TryParse(exObMsg.Payload, out var parsed) ? parsed : null;
 
                 _logger.LogWarning(
                     "QuarantiningMessage | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | Reason: {Reason} | RetryCount: {Count}",
-                    exOutboxMsg.CorrelationId, exOutboxMsg.Id, exOutboxMsg.RetryReason, exOutboxMsg.RetryCount);
+                    exObMsg.CorrelationId, exObMsg.Id, exObMsg.RetryReason, exObMsg.RetryCount);
 
                 _tradingDbContext.QuarantinedOutboxMessages.Add(new QuarantinedOutboxMessage
                 {
                     Id = Guid.NewGuid(),
-                    OriginalOutboxMessageId = exOutboxMsg.Id,
+                    OriginalOutboxMessageId = exObMsg.Id,
                     ClientOrderId = clientOrderId,
-                    Payload = exOutboxMsg.Payload,
-                    Reason = exOutboxMsg.RetryReason,
-                    FinalRetryCount = exOutboxMsg.RetryCount,
+                    Payload = exObMsg.Payload,
+                    Reason = exObMsg.RetryReason,
+                    FinalRetryCount = exObMsg.RetryCount,
                     QuarantinedAt = DateTimeOffset.UtcNow,
-                    ErrorMessage = exOutboxMsg.LastError,
-                    CorrelationId = exOutboxMsg.CorrelationId 
+                    ErrorMessage = exObMsg.LastError,
+                    CorrelationId = exObMsg.CorrelationId 
                 });
 
-                exOutboxMsg.ProcessedAt = DateTimeOffset.UtcNow;
+                exObMsg.ProcessedAt = DateTimeOffset.UtcNow;
             }
         }
 
-        private async Task<bool> ProcessPendingMessages()
+        private async Task ProcessPendingMessages()
         {
             var outboxMessages = await _tradingDbContext.OutboxMessages
                 .Where(x => x.ProcessedAt == null && x.RetryCount < 5)
@@ -93,7 +103,7 @@ namespace ScheduledOutboxMessageProcessor
                 .Take(50)
                 .ToListAsync();
 
-            if (outboxMessages.Count == 0) return false;
+            if (outboxMessages.Count == 0) return;
 
             _logger.LogWarning("ProcessingPhase | Found {Count} pending messages",
                 outboxMessages.Count);
@@ -114,8 +124,6 @@ namespace ScheduledOutboxMessageProcessor
 
                 alreadyProcessedOrders = new HashSet<Guid>(processedOrders);
             }
-
-            bool isServiceBusHealthy = false;
 
             foreach (var outboxMessage in outboxMessages)
             {
@@ -139,7 +147,6 @@ namespace ScheduledOutboxMessageProcessor
 
                         await NotifyServiceBusCreateOrderQueue(clientOrderId, outboxMessage.CorrelationId);
                         outboxMessage.ProcessedAt = DateTimeOffset.UtcNow;
-                        isServiceBusHealthy = true;
 
                         _logger.LogWarning(
                             "SentToServiceBus | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | Queue: CREATE_ORDER_QUEUE",
@@ -175,8 +182,6 @@ namespace ScheduledOutboxMessageProcessor
                     outboxMessage.RetryReason = OutboxRetryReason.Unknown;
                 }
             }
-
-            return isServiceBusHealthy;
         }
 
         private async Task AutoRecoverResurrectedMessages()
@@ -236,6 +241,26 @@ namespace ScheduledOutboxMessageProcessor
             };
 
             await _sender.SendMessageAsync(message);
+        }
+
+        private async Task<bool> IsServiceBusReachableAsync()
+        {
+            try
+            {
+                var adminClient = new ServiceBusAdministrationClient(_connectionString);
+                await adminClient.GetQueueRuntimePropertiesAsync("CREATE_ORDER_QUEUE");
+
+                _logger.LogWarning("ServiceBusReachable | CREATE_ORDER_QUEUE is accessible.");
+
+                return true;
+            }
+            catch (Exception ex) 
+            {
+                _logger.LogWarning("ServiceBusUnreachable | Cannot connect to Service Bus | Error: {Error}",
+                    ex.Message);
+                
+                return false;
+            }
         }
     }
 }
