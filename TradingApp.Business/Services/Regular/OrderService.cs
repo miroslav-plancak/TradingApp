@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using TradingApp.Business.DTOs.Order;
@@ -31,7 +32,7 @@ namespace TradingApp.Business.Services.Regular
 
         public async Task<CreatedOrderResponseDTO> CreateOrderAsync(CreateOrderRequestDTO orderRequest)
         {
-            var correlationId = Guid.NewGuid().ToString();
+            var correlationId = Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString();
 
             _logger.LogInformation(
                 "OrderCreationStarted | CorrelationId: {CorrelationId}",
