@@ -4,6 +4,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Polly.CircuitBreaker;
 using System.Text.Json;
 using TradingApp.Domain;
 using TradingApp.Domain.Models.Entities.QuarantinedOutboxMessage;
@@ -18,12 +19,15 @@ namespace ScheduledOutboxMessageProcessor
         private readonly ServiceBusClient _client;
         private readonly ServiceBusSender _sender;
         private readonly string _connectionString;
+        private readonly AsyncCircuitBreakerPolicy _circuitBreaker;
+        private static int _serviceBusFailureCount = 0;
 
         public ScheduledOutboxMessageProcessor
         (
             ILogger<ScheduledOutboxMessageProcessor> logger,
             TradingDbContext tradingDbContext,
-            IConfiguration configuration
+            IConfiguration configuration,
+            AsyncCircuitBreakerPolicy circuitBreakerPolicy
         )
         {
             _logger = logger;
@@ -31,6 +35,7 @@ namespace ScheduledOutboxMessageProcessor
             _connectionString = configuration["ServiceBusConnectionString"]!;
             _client = new ServiceBusClient(_connectionString);
             _sender = _client.CreateSender("CREATE_ORDER_QUEUE");
+            _circuitBreaker = circuitBreakerPolicy;
         }
 
         [Function("ScheduledOutboxMessageProcessor")]
@@ -125,6 +130,10 @@ namespace ScheduledOutboxMessageProcessor
                 alreadyProcessedOrders = new HashSet<Guid>(processedOrders);
             }
 
+            var successCount = 0;    
+            var failureCount = 0;    
+            var circuitOpened = false;
+
             foreach (var outboxMessage in outboxMessages)
             {
                 try
@@ -145,8 +154,15 @@ namespace ScheduledOutboxMessageProcessor
                             "SendingToServiceBus | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | ClientOrderId: {ClientOrderId}",
                             outboxMessage.CorrelationId, outboxMessage.Id, clientOrderId);
 
-                        await NotifyServiceBusCreateOrderQueue(clientOrderId, outboxMessage.CorrelationId);
+                        await _circuitBreaker.ExecuteAsync(async () =>
+                        {
+                            await NotifyServiceBusCreateOrderQueue(
+                                clientOrderId,
+                                outboxMessage.CorrelationId);
+                        });
+
                         outboxMessage.ProcessedAt = DateTimeOffset.UtcNow;
+                        successCount++;
 
                         _logger.LogWarning(
                             "SentToServiceBus | CorrelationId: {CorrelationId} | OutboxId: {OutboxId} | Queue: CREATE_ORDER_QUEUE",
@@ -160,7 +176,17 @@ namespace ScheduledOutboxMessageProcessor
 
                         outboxMessage.RetryCount++;
                         outboxMessage.RetryReason = OutboxRetryReason.InvalidPayload;
+                        failureCount++;
                     }
+                }
+                catch (BrokenCircuitException)
+                {
+                    circuitOpened = true;
+
+                    _logger.LogWarning(
+                        "CircuitOpen | Stopping batch | CorrelationId: {CorrelationId} | Remaining messages will retry next cycle",
+                        outboxMessage.CorrelationId);
+                    break;
                 }
                 catch (ServiceBusException serviceBusException)
                 {
@@ -171,6 +197,7 @@ namespace ScheduledOutboxMessageProcessor
                     outboxMessage.RetryCount++;
                     outboxMessage.RetryReason = OutboxRetryReason.ServiceBusUnavailable;
                     outboxMessage.LastError = serviceBusException.Message;
+                    failureCount++;
                 }
                 catch (Exception ex)
                 {
@@ -180,7 +207,38 @@ namespace ScheduledOutboxMessageProcessor
 
                     outboxMessage.RetryCount++;
                     outboxMessage.RetryReason = OutboxRetryReason.Unknown;
+                    failureCount++;
                 }
+            }
+
+            GenerateLogBasedOnResults(successCount, failureCount, circuitOpened);
+        }
+
+        private void GenerateLogBasedOnResults(int successCount, int failureCount, bool circuitOpened)
+        {
+            if (circuitOpened)
+            {
+                _logger.LogWarning(
+                    "ProcessingBatchAborted | CircuitOpen | Succeeded: {Success} | Failed: {Failed} | Remaining will retry next cycle",
+                    successCount, failureCount);
+            }
+            else if (failureCount > 0 && successCount == 0)
+            {
+                _logger.LogWarning(
+                    "ProcessingBatchFailed | All messages failed | Failed: {Failed}",
+                    failureCount);
+            }
+            else if (failureCount > 0)
+            {
+                _logger.LogWarning(
+                    "ProcessingBatchPartial | Succeeded: {Success} | Failed: {Failed}",
+                    successCount, failureCount);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "ProcessingBatchComplete | All messages sent | Succeeded: {Success}",
+                    successCount);
             }
         }
 
@@ -230,6 +288,8 @@ namespace ScheduledOutboxMessageProcessor
 
         private async Task NotifyServiceBusCreateOrderQueue(Guid clientOrderId, string correlationId)
         {
+            SimulateServiceBusFailure(false);
+
             var payload = new { ClientOrderId = clientOrderId };
 
             var serializedPayload = JsonSerializer.Serialize(payload);
@@ -260,6 +320,24 @@ namespace ScheduledOutboxMessageProcessor
                     ex.Message);
                 
                 return false;
+            }
+        }
+
+        private void SimulateServiceBusFailure(bool isQueueDown)
+        {
+            if (!isQueueDown) return;
+
+            _serviceBusFailureCount++;
+
+            if (_serviceBusFailureCount <= 3)
+            {
+                _logger.LogWarning(
+                    "SIMULATION | Simulating ServiceBus  outage | FailureCount: {Count}",
+                    _serviceBusFailureCount);
+
+                throw new ServiceBusException(
+                    $"SIMULATED: Service bus connection failed (failure {_serviceBusFailureCount} of 3)",
+                    ServiceBusFailureReason.ServiceCommunicationProblem);
             }
         }
     }

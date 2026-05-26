@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using ScheduledUnpublishedTopicMessagesProcessor.Extensions;
 using TradingApp.Domain;
 
 var builder = FunctionsApplication.CreateBuilder(args);
@@ -18,6 +19,8 @@ builder.Configuration.AddAzureKeyVault(
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
+
+builder.Services.AddServiceBusCircuitBreaker();
 
 builder.Services.AddDbContext<TradingDbContext>(options =>
     options.UseSqlServer(builder.Configuration["SqlConnectionString"])

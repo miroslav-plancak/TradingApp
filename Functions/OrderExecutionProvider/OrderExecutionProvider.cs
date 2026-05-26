@@ -16,6 +16,7 @@ namespace OrderExecutionProvider
         private readonly ILogger<OrderExecutionProvider> _logger;
         private readonly TradingDbContext _tradingDbContext;
         private readonly ServiceBusClient _serviceBusClient;
+        private readonly ServiceBusSender _sender;
 
         public OrderExecutionProvider
         (
@@ -27,6 +28,7 @@ namespace OrderExecutionProvider
             _logger = logger;
             _tradingDbContext = tradingDbContext;
             _serviceBusClient = serviceBusClient;
+            _sender = _serviceBusClient.CreateSender("order_events_topic");
         }
 
         [Function("OrderExecutionProvider")]
@@ -39,6 +41,8 @@ namespace OrderExecutionProvider
             ServiceBusMessageActions messageActions
         )
         {
+            RedirectIncomingMessagesToDeadLetterQueue(false);
+
             var correlationId = message.CorrelationId ?? "CorrelationId";
 
             _logger.LogWarning(
@@ -95,8 +99,6 @@ namespace OrderExecutionProvider
         {
             try
             {
-                var sender = _serviceBusClient.CreateSender("order_events_topic");
-
                 var eventPayload = new OrderProcessedEvent
                 {
                     ClientOrderId = clientOrderId,
@@ -118,7 +120,8 @@ namespace OrderExecutionProvider
                     "PublishingEventToTopic | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Topic: order_events_topic",
                     correlationId, clientOrderId);
 
-                await sender.SendMessageAsync(message);
+                SimulateTopicFailure(false);
+                await _sender.SendMessageAsync(message);
 
                 _logger.LogWarning(
                     "EventPublishedToTopic | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId} | Topic: order_events_topic",
@@ -152,6 +155,24 @@ namespace OrderExecutionProvider
                     "EventPublishFailed | CorrelationId: {CorrelationId} | ClientOrderId: {ClientOrderId}",
                     correlationId, clientOrderId);
             }
+        }
+
+        private void SimulateTopicFailure(bool isServiceBusDown) 
+        {
+            if (!isServiceBusDown) return;
+
+            throw new ServiceBusException(
+                    "SIMULATED: Topic down",
+                    ServiceBusFailureReason.ServiceCommunicationProblem);
+        }
+
+        private void RedirectIncomingMessagesToDeadLetterQueue(bool active) 
+        {
+            if (!active) return;
+
+            throw new ServiceBusException(
+                "SIMULATED: Incoming messages redirected to DeadLetterQueue.", 
+                ServiceBusFailureReason.GeneralError);
         }
     }
 }

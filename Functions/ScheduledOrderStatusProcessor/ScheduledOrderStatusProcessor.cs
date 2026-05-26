@@ -24,7 +24,7 @@ namespace ScheduledOrderStatusProcessor
         {
             _logger.LogWarning("ScheduledOrderStatusProcessor triggered at: {TriggerTime}",
                 DateTimeOffset.UtcNow);
-
+            //TODO: update UnpublishedTopicMessages OrderStatus here as well
             var pendingAckOrders = await _tradingDbContext.Orders
                 .Where(ao => ao.Status == OrderStatus.ACKNOWLEDGED)
                 .ToListAsync();

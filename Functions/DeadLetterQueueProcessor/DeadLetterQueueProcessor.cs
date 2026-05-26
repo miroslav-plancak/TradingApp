@@ -102,7 +102,7 @@ namespace DeadLetterQueueProcessor
                 await _deadLetterService.CreateDeadLetterLogAsync(
                     message.Body.ToString(),
                     payload.ClientOrderId,
-                    "Max retries exceeded",
+                    "Max retries exceeded", 
                     correlationId);
 
                 await SendAlertToOpsTeam(payload.ClientOrderId, correlationId);
