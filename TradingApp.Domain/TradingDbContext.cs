@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TradingApp.Domain.Models.Entities.DeadLetterLog;
+using TradingApp.Domain.Models.Entities.DeferredNotificationMessage;
 using TradingApp.Domain.Models.Entities.Order;
+using TradingApp.Domain.Models.Entities.OrderNotificationSequences;
 using TradingApp.Domain.Models.Entities.OutboxMessage;
 using TradingApp.Domain.Models.Entities.QuarantinedOutboxMessage;
 using TradingApp.Domain.Models.Entities.UnpublishedTopicMessages;
@@ -16,6 +18,7 @@ namespace TradingApp.Domain
         public DbSet<DeadLetterLog> DeadLetterLogs { get; set;}
         public DbSet<QuarantinedOutboxMessage> QuarantinedOutboxMessages { get; set; }
         public DbSet<UnpublishedTopicMessage> UnpublishedTopicMessages { get; set; }
+        public DbSet<OrderNotificationSequence> OrderNotificationSequences { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -116,6 +119,14 @@ namespace TradingApp.Domain
 
                 entity.Property(e => e.CorrelationId);
                 entity.HasIndex(e => e.CorrelationId);
+            });
+
+            modelBuilder.Entity<OrderNotificationSequence>(entity =>
+            {
+                entity.HasKey(e => e.ClientOrderId);
+                entity.Property(e => e.ClientOrderId).ValueGeneratedNever();
+                entity.Property(e => e.LastProcessedSequence).IsRequired();
+                entity.Property(e => e.UpdatedAt).IsRequired();
             });
         }
     }
