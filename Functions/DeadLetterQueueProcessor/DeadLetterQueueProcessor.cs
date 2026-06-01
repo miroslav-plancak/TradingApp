@@ -39,7 +39,7 @@ namespace DeadLetterQueueProcessor
         )
         {
             var correlationId = message.CorrelationId ?? "UNKNOWN";
-
+          
             _logger.LogWarning(
                 "DeadLetterMessageReceived | CorrelationId: {CorrelationId} | MessageId: {MessageId} | Time: {Time}",
                 correlationId, message.MessageId, DateTimeOffset.UtcNow);
@@ -102,7 +102,7 @@ namespace DeadLetterQueueProcessor
                 await _deadLetterService.CreateDeadLetterLogAsync(
                     message.Body.ToString(),
                     payload.ClientOrderId,
-                    "Max retries exceeded", 
+                    message.DeadLetterReason, 
                     correlationId);
 
                 await SendAlertToOpsTeam(payload.ClientOrderId, correlationId);
