@@ -132,6 +132,11 @@ namespace ScheduledOrderStatusProcessor
 
                     order.Status = OrderStatus.FILLED;
                     order.UpdatedAt = DateTimeOffset.UtcNow;
+
+                    _logger.LogWarning(
+                        "SavedToUnpublishedTopicMessages | CorrelationId: {CorrelationId} " +
+                        "| ClientOrderId: {ClientOrderId} | Status{Status}",
+                        order.CorrelationId, order.ClientOrderId, order.Status);
                 }
                 catch(Exception ex)
                 {

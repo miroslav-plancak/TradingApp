@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TradingApp.Domain;
 using TradingApp.Domain.Models.Entities.OrderNotificationSequences;
+using TradingApp.Domain.Models.Entities.PendingFilledNotification;
 using TradingApp.Events.Events;
 
 namespace NotificationProcessor
@@ -16,7 +17,6 @@ namespace NotificationProcessor
 
         private const string TopicName = "order_events_topic";
         private const string SubscriptionName = "notifications";
-        private static readonly Dictionary<Guid, OrderProcessedEvent> _pendingFilledEvents = new();
 
         public NotificationsProcessor(
             ILogger<NotificationsProcessor> logger,
@@ -65,31 +65,54 @@ namespace NotificationProcessor
             {
                 _logger.LogWarning(
                     "OutOfOrder | Expected sequence {Expected} but got {Actual} | " +
-                    "StoringFilledInMemory | CorrelationId: {CorrelationId}",
+                    "PersistingFilledToDB | CorrelationId: {CorrelationId}",
                     lastProcessedSequence + 1, orderEvent.Sequence, correlationId);
 
-                _pendingFilledEvents[orderEvent.ClientOrderId] = orderEvent;
+                var serializedOrderEventPayload = JsonSerializer.Serialize(orderEvent);
+
+                _tradingDbContext.PendingFilledNotifications.Add(new PendingFilledNotification
+                {
+                    ClientOrderId = orderEvent.ClientOrderId,
+                    EventPayload = serializedOrderEventPayload,
+                    CorrelationId = correlationId,
+                    StoredAt = DateTimeOffset.UtcNow
+                });
+
+                await _tradingDbContext.SaveChangesAsync();
+
+                _logger.LogWarning(
+                   "FilledPersistedToDB | ClientOrderId: {ClientOrderId} | CorrelationId: {CorrelationId}",
+                   orderEvent.ClientOrderId, correlationId);
 
                 return;
             }
 
             await ProcessNotification(orderEvent, correlationId);
 
-            if (_pendingFilledEvents.TryGetValue(orderEvent.ClientOrderId, out var pendingFilled))
+            var pendingFilledOrder = await _tradingDbContext.PendingFilledNotifications
+                .FirstOrDefaultAsync(x => x.ClientOrderId == orderEvent.ClientOrderId);
+
+            if(pendingFilledOrder != null)
             {
                 _logger.LogWarning(
                     "PendingFilledFound | Sending deferred FILLED | CorrelationId: {CorrelationId}",
                     correlationId);
 
-                await ProcessNotification(pendingFilled, correlationId);
+                var deserializedpendingFilledOrder = 
+                    JsonSerializer.Deserialize<OrderProcessedEvent>(pendingFilledOrder.EventPayload);
 
-                _pendingFilledEvents.Remove(orderEvent.ClientOrderId);
+                if(deserializedpendingFilledOrder != null)
+                {
+                    await ProcessNotification(deserializedpendingFilledOrder, correlationId);
+                }
+
+                _tradingDbContext.PendingFilledNotifications.Remove(pendingFilledOrder);
 
                 if (tracking != null)
                 {
                     _tradingDbContext.OrderNotificationSequences.Remove(tracking);
                 }
-                  
+
                 await _tradingDbContext.SaveChangesAsync();
 
                 return;

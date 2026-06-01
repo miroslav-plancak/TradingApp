@@ -44,6 +44,7 @@ namespace ScheduledUnpublishedTopicMessagesProcessor
             var unpublishedMessages = await _tradingDbContext.UnpublishedTopicMessages
                 .Where(x => x.PublishedAt == null && x.RetryCount < 5)
                 .OrderBy(x => x.CreatedAt)
+                .ThenBy(x => x.OrderStatus)
                 .Take(50)
                 .ToListAsync();
 

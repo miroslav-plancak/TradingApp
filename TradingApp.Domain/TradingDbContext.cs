@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TradingApp.Domain.Models.Entities.DeadLetterLog;
-using TradingApp.Domain.Models.Entities.DeferredNotificationMessage;
 using TradingApp.Domain.Models.Entities.Order;
 using TradingApp.Domain.Models.Entities.OrderNotificationSequences;
 using TradingApp.Domain.Models.Entities.OutboxMessage;
+using TradingApp.Domain.Models.Entities.PendingFilledNotification;
 using TradingApp.Domain.Models.Entities.QuarantinedOutboxMessage;
 using TradingApp.Domain.Models.Entities.UnpublishedTopicMessages;
 using TradingApp.Domain.Models.Enums;
@@ -19,6 +19,7 @@ namespace TradingApp.Domain
         public DbSet<QuarantinedOutboxMessage> QuarantinedOutboxMessages { get; set; }
         public DbSet<UnpublishedTopicMessage> UnpublishedTopicMessages { get; set; }
         public DbSet<OrderNotificationSequence> OrderNotificationSequences { get; set; }
+        public DbSet<PendingFilledNotification> PendingFilledNotifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -127,6 +128,16 @@ namespace TradingApp.Domain
                 entity.Property(e => e.ClientOrderId).ValueGeneratedNever();
                 entity.Property(e => e.LastProcessedSequence).IsRequired();
                 entity.Property(e => e.UpdatedAt).IsRequired();
+            });
+
+            modelBuilder.Entity<PendingFilledNotification>(entity =>
+            {
+                entity.HasKey(e => e.ClientOrderId);
+                entity.Property(e => e.ClientOrderId).ValueGeneratedNever();
+
+                entity.Property(e => e.EventPayload).IsRequired();
+                entity.Property(e => e.CorrelationId).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.StoredAt).IsRequired();
             });
         }
     }
