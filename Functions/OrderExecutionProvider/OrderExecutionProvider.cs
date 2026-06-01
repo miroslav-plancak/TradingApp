@@ -103,7 +103,8 @@ namespace OrderExecutionProvider
                 {
                     ClientOrderId = clientOrderId,
                     Status = randomStatus.ToString(),
-                    ProcessedAt = DateTimeOffset.UtcNow
+                    ProcessedAt = DateTimeOffset.UtcNow,
+                    Sequence = 1
                 };
 
                 var messageBody = JsonSerializer.Serialize(eventPayload);
@@ -111,9 +112,10 @@ namespace OrderExecutionProvider
                 var message = new ServiceBusMessage(messageBody)
                 {
                     MessageId = Guid.NewGuid().ToString(),
-                    CorrelationId = correlationId, 
+                    CorrelationId = correlationId,
                     ContentType = "application/json",
-                    Subject = "OrderProcessed"
+                    Subject = "OrderProcessed",
+                    SessionId = clientOrderId.ToString()
                 };
 
                 _logger.LogWarning(

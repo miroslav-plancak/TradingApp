@@ -72,7 +72,8 @@ namespace ScheduledUnpublishedTopicMessagesProcessor
                     {
                         ClientOrderId = unpublishedMessage.ClientOrderId,
                         Status = unpublishedMessage.OrderStatus.ToString(),
-                        ProcessedAt = unpublishedMessage.ProcessedAt
+                        ProcessedAt = unpublishedMessage.ProcessedAt,
+                        Sequence = 1
                     };
 
                     var messageBody = JsonSerializer.Serialize(eventPayload);
@@ -82,7 +83,8 @@ namespace ScheduledUnpublishedTopicMessagesProcessor
                         MessageId = Guid.NewGuid().ToString(),
                         CorrelationId = unpublishedMessage.CorrelationId,
                         ContentType = "application/json",
-                        Subject = "OrderProcessed"
+                        Subject = "OrderProcessed",
+                        SessionId = unpublishedMessage.ClientOrderId.ToString()
                     };
 
                     await _circuitBreaker.ExecuteAsync(async () =>
