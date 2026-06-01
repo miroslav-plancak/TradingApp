@@ -1,9 +1,12 @@
 using Azure.Identity;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using TradingApp.Domain;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -16,5 +19,8 @@ builder.Configuration.AddAzureKeyVault(
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
+
+builder.Services.AddDbContext<TradingDbContext>(options =>
+    options.UseSqlServer(builder.Configuration["SqlConnectionString"]));
 
 builder.Build().Run();
