@@ -20,6 +20,8 @@ builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddDbContext<TradingDbContext>(options =>
     options.UseSqlServer(builder.Configuration["SqlConnectionString"]));
 

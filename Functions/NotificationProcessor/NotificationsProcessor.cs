@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TradingApp.Domain;
@@ -14,16 +15,24 @@ namespace NotificationProcessor
     {
         private readonly ILogger<NotificationsProcessor> _logger;
         private readonly TradingDbContext _tradingDbContext;
+        private readonly HttpClient _httpClient;
+        private readonly string _teamsWebhookUrl;
 
         private const string TopicName = "order_events_topic";
         private const string SubscriptionName = "notifications";
 
-        public NotificationsProcessor(
+        public NotificationsProcessor
+        (
             ILogger<NotificationsProcessor> logger,
-            TradingDbContext tradingDbContext)
+            TradingDbContext tradingDbContext,
+            IConfiguration configuration,
+            IHttpClientFactory httpClientFactory
+        )
         {
             _logger = logger;
             _tradingDbContext = tradingDbContext;
+            _httpClient = httpClientFactory.CreateClient();
+            _teamsWebhookUrl = configuration["TeamsWebhookUrl"]!;
         }
 
         [Function(nameof(NotificationsProcessor))]
@@ -159,7 +168,7 @@ namespace NotificationProcessor
                 "| ClientOrderId {ClientOrderId} | OrderStatus: {Status}",
                 correlationId, orderEvent.ClientOrderId, orderEvent.Status);
 
-            await SendNotifications(orderEvent);
+            await SendTeamsNotification(orderEvent);
 
             _logger.LogWarning(
                 "Notification sent for Order with CorrelationId: {CorrelationId} " +
@@ -168,13 +177,84 @@ namespace NotificationProcessor
         }
 
         // ─────────────────────────────────────────────────────────────────
-        // SendNotifications: the actual downstream notification logic.
+        // SendTeamsNotification: the actual downstream notification logic.
         // Currently simulated with Task.Delay(1000).
         // In production: send email, Teams message, webhook, etc.
         // ─────────────────────────────────────────────────────────────────
-        private async Task SendNotifications(OrderProcessedEvent orderEvent)
+        private async Task SendTeamsNotification(OrderProcessedEvent orderEvent)
         {
-            await Task.Delay(1000);
+            var statusColor = orderEvent.Status switch
+            {
+                "ACKNOWLEDGED" => "0076D7", // blue
+                "FILLED"       => "00B050", // green
+                "REJECTED"     => "D70000", // red
+                 _             => "808080"  // grey
+            };
+
+            var statusEmoji = orderEvent.Status switch
+            {
+                "ACKNOWLEDGED" => "🔵",
+                "FILLED"       => "🟢",
+                "REJECTED"     => "🔴",
+                _              => "⚪"
+            };
+
+            var payload = new
+            {
+                type = "MessageCard",
+                context = "http://schema.org/extensions",
+                themeColor = statusColor,
+                summary = $"Order: {orderEvent.ClientOrderId} status update: {orderEvent.Status}",
+
+                sections = new[]
+                {
+                    new
+                    {
+                        activityTitle = $"{statusEmoji} Order Status Update",
+                        activitySubTitle = $"Status changed to  **{orderEvent.Status}**",
+                        facts = new[]
+                        {
+                            new { name = "Order ID:", value = orderEvent.ClientOrderId.ToString()},
+                            new { name = "Status:", value = orderEvent.Status},
+                            new { name = "Processed At:", value = orderEvent.ProcessedAt.ToString("yyyy-MM-dd HH:mm:ss UTC")}
+                        },
+                        markdown = true
+                    }
+                }
+            };
+
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            _logger.LogWarning(
+                "SendingTeamsNotification | ClientOrderId: {ClientOrderId} | Status: {Status}",
+                orderEvent.ClientOrderId, orderEvent.Status);
+
+            try 
+            {
+                var httpResponse = await _httpClient.PostAsync(_teamsWebhookUrl, content);
+
+                if (httpResponse.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning(
+                      "TeamsNotificationSent | ClientOrderId: {ClientOrderId} | Status: {Status}",
+                      orderEvent.ClientOrderId, orderEvent.Status);
+                }
+                else
+                {
+                    var responseBody = await httpResponse.Content.ReadAsStringAsync();
+                    _logger.LogError(
+                      "TeamsNotificationFailed | ClientOrderId: {ClientOrderId} | Status: {Status} | Response: {Response}",
+                      orderEvent.ClientOrderId, orderEvent.Status, responseBody);
+                }
+
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex,
+                   "TeamsNotificationException | ClientOrderId: {ClientOrderId}",
+                   orderEvent.ClientOrderId);
+            }
         }
     }
 }
