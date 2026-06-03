@@ -37,8 +37,7 @@ namespace OrderExecutionProvider
             [ServiceBusTrigger(
                 queueName: "CREATE_ORDER_QUEUE",
                 Connection = "ServiceBusConnection")]
-            ServiceBusReceivedMessage message,
-            ServiceBusMessageActions messageActions
+            ServiceBusReceivedMessage message
         )
         {
             RedirectIncomingMessagesToDeadLetterQueue(false);
@@ -99,12 +98,13 @@ namespace OrderExecutionProvider
         {
             try
             {
-                var eventPayload = new OrderProcessedEvent
+                var eventPayload = new OrderStatusEvent
                 {
                     ClientOrderId = clientOrderId,
                     Status = randomStatus.ToString(),
-                    ProcessedAt = DateTimeOffset.UtcNow,
-                    Sequence = 1
+                    EventTime = DateTimeOffset.UtcNow,
+                    Sequence = 1,
+                    CorrelationId = correlationId
                 };
 
                 var messageBody = JsonSerializer.Serialize(eventPayload);
@@ -112,7 +112,6 @@ namespace OrderExecutionProvider
                 var message = new ServiceBusMessage(messageBody)
                 {
                     MessageId = Guid.NewGuid().ToString(),
-                    CorrelationId = correlationId,
                     ContentType = "application/json",
                     Subject = "OrderProcessed",
                     SessionId = clientOrderId.ToString()

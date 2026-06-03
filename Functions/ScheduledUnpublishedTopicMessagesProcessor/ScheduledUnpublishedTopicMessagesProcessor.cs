@@ -69,12 +69,13 @@ namespace ScheduledUnpublishedTopicMessagesProcessor
                         "RetryingTopicPublish | CorrelationId: {CorrelationId} | UnpublishedId: {UnpublishedId} | ClientOrderId: {ClientOrderId}",
                         unpublishedMessage.CorrelationId, unpublishedMessage.Id, unpublishedMessage.ClientOrderId);
 
-                    var eventPayload = new OrderProcessedEvent
+                    var eventPayload = new OrderStatusEvent
                     {
                         ClientOrderId = unpublishedMessage.ClientOrderId,
                         Status = unpublishedMessage.OrderStatus.ToString(),
-                        ProcessedAt = unpublishedMessage.ProcessedAt,
-                        Sequence = 1
+                        EventTime = unpublishedMessage.ProcessedAt,
+                        Sequence = 1,
+                        CorrelationId = unpublishedMessage.CorrelationId,
                     };
 
                     var messageBody = JsonSerializer.Serialize(eventPayload);
@@ -82,7 +83,6 @@ namespace ScheduledUnpublishedTopicMessagesProcessor
                     var message = new ServiceBusMessage(messageBody)
                     {
                         MessageId = Guid.NewGuid().ToString(),
-                        CorrelationId = unpublishedMessage.CorrelationId,
                         ContentType = "application/json",
                         Subject = "OrderProcessed",
                         SessionId = unpublishedMessage.ClientOrderId.ToString()

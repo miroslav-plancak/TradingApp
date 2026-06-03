@@ -30,7 +30,7 @@ namespace AuditLogProcessor
             _logger.LogWarning("AuditLogProcessor started | CorrelationId: {CorrelationId}",
                         correlationId);
 
-            var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body.ToString());
+            var orderEvent = JsonSerializer.Deserialize<OrderStatusEvent>(message.Body.ToString());
 
             if (orderEvent == null)
             {
@@ -48,7 +48,7 @@ namespace AuditLogProcessor
 
         }
 
-        private async Task WriteAuditLog(OrderProcessedEvent orderEvent)
+        private async Task WriteAuditLog(OrderStatusEvent orderEvent)
         {
             await Task.Delay(1500);
             await Task.CompletedTask;

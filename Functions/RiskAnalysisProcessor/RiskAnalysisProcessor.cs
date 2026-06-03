@@ -30,7 +30,7 @@ namespace RiskAnalysisProcessor
             _logger.LogWarning("RiskAnalysisProcessor started | CorrelationId: {CorrelationId}",
                         correlationId);
 
-            var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(message.Body.ToString());
+            var orderEvent = JsonSerializer.Deserialize<OrderStatusEvent>(message.Body.ToString());
 
             if (orderEvent == null)
             {
@@ -51,7 +51,7 @@ namespace RiskAnalysisProcessor
                 riskScore);
         }
 
-        private async Task<double> CalculateRiskScore(OrderProcessedEvent orderEvent)
+        private async Task<double> CalculateRiskScore(OrderStatusEvent orderEvent)
         {
             await Task.Delay(500);
             var random = new Random();

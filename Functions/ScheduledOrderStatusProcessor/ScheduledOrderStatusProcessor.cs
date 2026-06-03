@@ -72,12 +72,13 @@ namespace ScheduledOrderStatusProcessor
                         "| ClientOrderId: {ClientOrderId} | ACKNOWLEDGED => FILLED",
                     order.CorrelationId, order.Id, order.ClientOrderId);
 
-                    var eventPayload = new OrderStatusChangedEvent
+                    var eventPayload = new OrderStatusEvent
                     {
                         ClientOrderId = order.ClientOrderId,
                         Status = OrderStatus.FILLED.ToString(),
-                        UpdatedAt = DateTimeOffset.UtcNow,
-                        Sequence = 2
+                        EventTime = DateTimeOffset.UtcNow,
+                        Sequence = 2,
+                        CorrelationId = order.CorrelationId
                     };
 
                     var messageBody = JsonSerializer.Serialize(eventPayload);
@@ -85,7 +86,6 @@ namespace ScheduledOrderStatusProcessor
                     var message = new ServiceBusMessage(messageBody)
                     {
                         MessageId = Guid.NewGuid().ToString(),
-                        CorrelationId = order.CorrelationId,
                         ContentType = "application/json",
                         Subject = "OrderStatusFilled",
                         SessionId = order.ClientOrderId.ToString()

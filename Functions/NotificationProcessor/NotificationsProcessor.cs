@@ -42,46 +42,46 @@ namespace NotificationProcessor
                 SubscriptionName,
                 Connection = "ServiceBusConnection",
                 IsSessionsEnabled = true)]
-            ServiceBusReceivedMessage message,
-            ServiceBusMessageActions messageActions)
+            ServiceBusReceivedMessage message)
         {
-            var correlationId = message.CorrelationId ?? "UNKNOWN";
+            var orderStatusEvent = JsonSerializer.Deserialize<OrderStatusEvent>(
+                message.Body.ToString());
+
+            if (orderStatusEvent == null)
+            {
+                var fallbackCorrelationId = message.CorrelationId ?? "UNKNOWN";
+                _logger.LogWarning(
+                    "OrderEventNull | CorrelationId: {CorrelationId}", fallbackCorrelationId);
+                return;
+            }
+
+            var correlationId = orderStatusEvent.CorrelationId;
 
             _logger.LogWarning(
                 "NotificationProcessor started | CorrelationId: {CorrelationId} | SessionId: {SessionId}",
                 correlationId, message.SessionId);
 
-            var orderEvent = JsonSerializer.Deserialize<OrderProcessedEvent>(
-                message.Body.ToString());
-
-            if (orderEvent == null)
-            {
-                _logger.LogWarning(
-                    "OrderEventNull | CorrelationId: {CorrelationId}", correlationId);
-                return;
-            }
-
             _logger.LogWarning(
                 "ReceivedEvent | CorrelationId: {CorrelationId} | Status: {Status} | Sequence: {Sequence}",
-                correlationId, orderEvent.Status, orderEvent.Sequence);
+                correlationId, orderStatusEvent.Status, orderStatusEvent.Sequence);
 
             var tracking = await _tradingDbContext.OrderNotificationSequences
-                .FirstOrDefaultAsync(x => x.ClientOrderId == orderEvent.ClientOrderId);
+                .FirstOrDefaultAsync(x => x.ClientOrderId == orderStatusEvent.ClientOrderId);
 
             var lastProcessedSequence = tracking?.LastProcessedSequence ?? 0;
-          
-            if (orderEvent.Sequence > lastProcessedSequence + 1)
+
+            if (orderStatusEvent.Sequence > lastProcessedSequence + 1)
             {
                 _logger.LogWarning(
                     "OutOfOrder | Expected sequence {Expected} but got {Actual} | " +
                     "PersistingFilledToDB | CorrelationId: {CorrelationId}",
-                    lastProcessedSequence + 1, orderEvent.Sequence, correlationId);
+                    lastProcessedSequence + 1, orderStatusEvent.Sequence, correlationId);
 
-                var serializedOrderEventPayload = JsonSerializer.Serialize(orderEvent);
+                var serializedOrderEventPayload = JsonSerializer.Serialize(orderStatusEvent);
 
                 _tradingDbContext.PendingFilledNotifications.Add(new PendingFilledNotification
                 {
-                    ClientOrderId = orderEvent.ClientOrderId,
+                    ClientOrderId = orderStatusEvent.ClientOrderId,
                     EventPayload = serializedOrderEventPayload,
                     CorrelationId = correlationId,
                     StoredAt = DateTimeOffset.UtcNow
@@ -90,29 +90,29 @@ namespace NotificationProcessor
                 await _tradingDbContext.SaveChangesAsync();
 
                 _logger.LogWarning(
-                   "FilledPersistedToDB | ClientOrderId: {ClientOrderId} | CorrelationId: {CorrelationId}",
-                   orderEvent.ClientOrderId, correlationId);
+                    "FilledPersistedToDB | ClientOrderId: {ClientOrderId} | CorrelationId: {CorrelationId}",
+                    orderStatusEvent.ClientOrderId, correlationId);
 
                 return;
             }
 
-            await ProcessNotification(orderEvent, correlationId);
+            await ProcessNotification(orderStatusEvent, correlationId);
 
             var pendingFilledOrder = await _tradingDbContext.PendingFilledNotifications
-                .FirstOrDefaultAsync(x => x.ClientOrderId == orderEvent.ClientOrderId);
+                .FirstOrDefaultAsync(x => x.ClientOrderId == orderStatusEvent.ClientOrderId);
 
-            if(pendingFilledOrder != null)
+            if (pendingFilledOrder != null)
             {
                 _logger.LogWarning(
                     "PendingFilledFound | Sending deferred FILLED | CorrelationId: {CorrelationId}",
                     correlationId);
 
-                var deserializedpendingFilledOrder = 
-                    JsonSerializer.Deserialize<OrderProcessedEvent>(pendingFilledOrder.EventPayload);
+                var deserializedPendingFilledOrder =
+                    JsonSerializer.Deserialize<OrderStatusEvent>(pendingFilledOrder.EventPayload);
 
-                if(deserializedpendingFilledOrder != null)
+                if (deserializedPendingFilledOrder != null)
                 {
-                    await ProcessNotification(deserializedpendingFilledOrder, correlationId);
+                    await ProcessNotification(deserializedPendingFilledOrder, correlationId);
                 }
 
                 _tradingDbContext.PendingFilledNotifications.Remove(pendingFilledOrder);
@@ -127,26 +127,26 @@ namespace NotificationProcessor
                 return;
             }
 
-            if (tracking == null && orderEvent.Status != "REJECTED")
+            if (tracking == null && orderStatusEvent.Status != "REJECTED")
             {
                 _tradingDbContext.OrderNotificationSequences.Add(
                     new OrderNotificationSequence
                     {
-                        ClientOrderId = orderEvent.ClientOrderId,
-                        LastProcessedSequence = orderEvent.Sequence,
+                        ClientOrderId = orderStatusEvent.ClientOrderId,
+                        LastProcessedSequence = orderStatusEvent.Sequence,
                         UpdatedAt = DateTimeOffset.UtcNow
                     });
 
                 _logger.LogWarning(
                     "TrackingCreated | Sequence: {Sequence} | CorrelationId: {CorrelationId}",
-                    orderEvent.Sequence, correlationId);
+                    orderStatusEvent.Sequence, correlationId);
             }
             else if (tracking != null)
             {
-                tracking.LastProcessedSequence = orderEvent.Sequence;
+                tracking.LastProcessedSequence = orderStatusEvent.Sequence;
                 tracking.UpdatedAt = DateTimeOffset.UtcNow;
 
-                if (orderEvent.Sequence == 2)
+                if (orderStatusEvent.Sequence == 2)
                 {
                     _tradingDbContext.OrderNotificationSequences.Remove(tracking);
 
@@ -160,7 +160,7 @@ namespace NotificationProcessor
         }
 
         private async Task ProcessNotification(
-            OrderProcessedEvent orderEvent,
+            OrderStatusEvent orderEvent,
             string correlationId)
         {
             _logger.LogWarning(
@@ -168,7 +168,7 @@ namespace NotificationProcessor
                 "| ClientOrderId {ClientOrderId} | OrderStatus: {Status}",
                 correlationId, orderEvent.ClientOrderId, orderEvent.Status);
 
-            await SendTeamsNotification(orderEvent);
+            await SendTeamsNotification(orderEvent, correlationId);
 
             _logger.LogWarning(
                 "Notification sent for Order with CorrelationId: {CorrelationId} " +
@@ -176,19 +176,14 @@ namespace NotificationProcessor
                 correlationId, orderEvent.ClientOrderId, orderEvent.Status);
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // SendTeamsNotification: the actual downstream notification logic.
-        // Currently simulated with Task.Delay(1000).
-        // In production: send email, Teams message, webhook, etc.
-        // ─────────────────────────────────────────────────────────────────
-        private async Task SendTeamsNotification(OrderProcessedEvent orderEvent)
+        private async Task SendTeamsNotification(OrderStatusEvent orderEvent, string correlationId)
         {
             var statusColor = orderEvent.Status switch
             {
-                "ACKNOWLEDGED" => "0076D7", // blue
-                "FILLED"       => "00B050", // green
-                "REJECTED"     => "D70000", // red
-                 _             => "808080"  // grey
+                "ACKNOWLEDGED" => "0076D7", //blue
+                "FILLED"       => "00B050", //green
+                "REJECTED"     => "D70000", //red
+                _              => "808080" //grey
             };
 
             var statusEmoji = orderEvent.Status switch
@@ -205,18 +200,18 @@ namespace NotificationProcessor
                 context = "http://schema.org/extensions",
                 themeColor = statusColor,
                 summary = $"Order: {orderEvent.ClientOrderId} status update: {orderEvent.Status}",
-
                 sections = new[]
                 {
                     new
                     {
                         activityTitle = $"{statusEmoji} Order Status Update",
-                        activitySubTitle = $"Status changed to  **{orderEvent.Status}**",
+                        activitySubTitle = $"Status changed to **{orderEvent.Status}**",
                         facts = new[]
                         {
-                            new { name = "Order ID:", value = orderEvent.ClientOrderId.ToString()},
-                            new { name = "Status:", value = orderEvent.Status},
-                            new { name = "Processed At:", value = orderEvent.ProcessedAt.ToString("yyyy-MM-dd HH:mm:ss UTC")}
+                            new { name = "Order ID:",       value = orderEvent.ClientOrderId.ToString() },
+                            new { name = "Status:",         value = orderEvent.Status },
+                            new { name = "Processed At:",   value = orderEvent.EventTime.ToString("yyyy-MM-dd HH:mm:ss UTC") },
+                            new { name = "Correlation ID:", value = correlationId }
                         },
                         markdown = true
                     }
@@ -227,33 +222,32 @@ namespace NotificationProcessor
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
             _logger.LogWarning(
-                "SendingTeamsNotification | ClientOrderId: {ClientOrderId} | Status: {Status}",
-                orderEvent.ClientOrderId, orderEvent.Status);
+                "SendingTeamsNotification | ClientOrderId: {ClientOrderId} | Status: {Status} | CorrelationId: {CorrelationId}",
+                orderEvent.ClientOrderId, orderEvent.Status, correlationId);
 
-            try 
+            try
             {
                 var httpResponse = await _httpClient.PostAsync(_teamsWebhookUrl, content);
 
                 if (httpResponse.IsSuccessStatusCode)
                 {
                     _logger.LogWarning(
-                      "TeamsNotificationSent | ClientOrderId: {ClientOrderId} | Status: {Status}",
-                      orderEvent.ClientOrderId, orderEvent.Status);
+                        "TeamsNotificationSent | ClientOrderId: {ClientOrderId} | Status: {Status} | CorrelationId: {CorrelationId}",
+                        orderEvent.ClientOrderId, orderEvent.Status, correlationId);
                 }
                 else
                 {
                     var responseBody = await httpResponse.Content.ReadAsStringAsync();
                     _logger.LogError(
-                      "TeamsNotificationFailed | ClientOrderId: {ClientOrderId} | Status: {Status} | Response: {Response}",
-                      orderEvent.ClientOrderId, orderEvent.Status, responseBody);
+                        "TeamsNotificationFailed | ClientOrderId: {ClientOrderId} | Status: {Status} | CorrelationId: {CorrelationId} | Response: {Response}",
+                        orderEvent.ClientOrderId, orderEvent.Status, correlationId, responseBody);
                 }
-
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex,
-                   "TeamsNotificationException | ClientOrderId: {ClientOrderId}",
-                   orderEvent.ClientOrderId);
+                    "TeamsNotificationException | ClientOrderId: {ClientOrderId} | CorrelationId: {CorrelationId}",
+                    orderEvent.ClientOrderId, correlationId);
             }
         }
     }
