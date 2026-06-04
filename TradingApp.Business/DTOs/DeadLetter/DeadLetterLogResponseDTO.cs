@@ -13,5 +13,6 @@ namespace TradingApp.Business.DTOs.DeadLetter
         public DateTimeOffset? ResolvedAt { get; set; }
         public string ResolvedBy { get; set; }
         public string MessageBody { get; set; }
+        public string CorrelationId { get; set; }
     }
 }

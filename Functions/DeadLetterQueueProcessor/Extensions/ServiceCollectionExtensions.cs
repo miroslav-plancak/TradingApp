@@ -6,12 +6,13 @@ using TradingApp.Business.Logger;
 using TradingApp.Business.Repositories;
 using TradingApp.Business.Services.Regular;
 
-namespace DeadLetterQueueProcessor
+namespace DeadLetterQueueProcessor.Extensions
 {
     public static class ServiceCollectionExtensions
     {
         public static IServiceCollection RegisterDeadLetterService(this IServiceCollection services) 
         {
+            services.AddHttpClient();
             services.AddScoped<ILogger, TradingAppLogger>();
             services.AddScoped<IDeadLetterService, DeadLetterService>();
             services.AddScoped<IDeadLetterRepository, DeadLetterRepository>();

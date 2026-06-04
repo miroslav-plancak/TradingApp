@@ -22,7 +22,8 @@ namespace TradingApp.Business.Mappers
                 ResolutionNotes = deadLetterLog.ResolutionNotes,
                 ResolvedAt = deadLetterLog.ResolvedAt,
                 ResolvedBy = deadLetterLog.ResolvedBy,
-                MessageBody = deadLetterLog.MessageBody
+                MessageBody = deadLetterLog.MessageBody,
+                CorrelationId = deadLetterLog.CorrelationId ?? "UNKNOWN"
             };
         }
 

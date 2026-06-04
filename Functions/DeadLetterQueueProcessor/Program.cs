@@ -1,5 +1,5 @@
 using Azure.Identity;
-using DeadLetterQueueProcessor;
+using DeadLetterQueueProcessor.Extensions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.EntityFrameworkCore;
