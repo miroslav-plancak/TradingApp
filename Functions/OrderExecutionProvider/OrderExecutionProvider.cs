@@ -58,6 +58,11 @@ namespace OrderExecutionProvider
                 return;
             }
 
+            // TODO: this and all other SQL connections can hang indefinitely when not configured
+            // which would make the OrderExecutionProvider.cs func run for up to 15 min -> at which
+            // point Azure reclaims the resource and the function is shut down. This is a problem here
+            // and anywhere else where I am making a database call via EF Core, so fix it everywhere
+            // by adding .CommandTimeout(30) to the DbContext registration in Program.cs.
             var orderExists = await _tradingDbContext.Orders
                 .AnyAsync(o => o.ClientOrderId == payload.ClientOrderId);
 

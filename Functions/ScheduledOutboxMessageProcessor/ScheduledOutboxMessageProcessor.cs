@@ -26,7 +26,7 @@ namespace ScheduledOutboxMessageProcessor
         (
             ILogger<ScheduledOutboxMessageProcessor> logger,
             TradingDbContext tradingDbContext,
-            IConfiguration configuration,
+            IConfiguration configuration,                     
             AsyncCircuitBreakerPolicy circuitBreakerPolicy
         )
         {
