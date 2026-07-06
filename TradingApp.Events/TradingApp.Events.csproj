@@ -3,7 +3,7 @@
   <PropertyGroup>
 	<PackageId>TradingApp.Events</PackageId>
 	<Version>1.0.0</Version>
-	<Author>Miroslav Plancak</Author>
+	<Authors>Miroslav Plancak</Authors>
 	<Description>Shared event/DTO contracts for TradingApp services.</Description>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
