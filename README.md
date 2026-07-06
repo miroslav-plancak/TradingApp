@@ -158,6 +158,40 @@ Queue messages to `CREATE_ORDER_QUEUE` use `OrderPayload` (containing only `Clie
 
 ---
 
+## Shared Contract Package (Azure Artifacts)
+
+`TradingApp.Events` is distributed as a versioned NuGet package rather than a project reference, so that changing the contract is a deliberate, per-consumer opt-in rather than an instant change across every function.
+
+- **Feed:** `fintech-packages`, project-scoped feed in the `fintech-eda-sandbox` Azure DevOps org (project `FintechTradingAppDemo`)
+- **Current version:** `1.0.0`
+- **Consumers (`PackageReference`):** `OrderExecutionProvider`, `DeadLetterQueueProcessor`, `NotificationProcessor`, `RiskAnalysisProcessor`, `AuditLogProcessor`, `ScheduledOrderStatusProcessor`, `ScheduledUnpublishedTopicMessagesProcessor` — the seven functions that actually touch `OrderStatusEvent`/`OrderPayload`
+- **Not a consumer:** `TradingApp.API`, `TradingApp.Business`, `TradingApp.Domain`, `ScheduledOutboxMessageProcessor` — none of these reference the `TradingApp.Events` namespace
+
+Each consuming project has its own `nuget.config` declaring the feed as a package source:
+
+```xml
+<configuration>
+  <packageSources>
+    <add key="azure-artifacts" value="https://pkgs.dev.azure.com/fintech-eda-sandbox/FintechTradingAppDemo/_packaging/fintech-packages/nuget/v3/index.json" />
+  </packageSources>
+</configuration>
+```
+
+This only declares *where* the feed is — restoring still requires the developer's own Azure DevOps credentials (PAT with `Packaging: Read & Write`, or interactive sign-in via the Azure Artifacts Credential Provider) to actually authenticate against it.
+
+### Publishing a new version
+
+```
+dotnet pack TradingApp.Events/TradingApp.Events.csproj -c Release -o ./artifacts
+dotnet nuget push --source azure-artifacts --api-key az ./artifacts/TradingApp.Events.<version>.nupkg
+```
+
+Version bumps follow SemVer: **PATCH** for internal fixes with no shape change, **MINOR** for additive/backward-compatible fields, **MAJOR** for breaking changes (renamed/removed fields, changed types) — the signal for every consumer to stop and check compatibility before upgrading their `PackageReference` version.
+
+Because the package ships a Release build, Visual Studio's "Just My Code" will warn when debugging into it and won't reliably hit breakpoints inside it — expected, since it's plain DTOs with no logic to step through.
+
+---
+
 ## Service Bus Configuration
 
 | Resource | Type | Sessions |
