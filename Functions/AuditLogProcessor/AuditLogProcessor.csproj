@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\TradingApp.Events\TradingApp.Events.csproj" />
+	  <PackageReference Include="TradingApp.Events" Version="1.0.0" />
   </ItemGroup>
 
 </Project>

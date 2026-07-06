@@ -21,9 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
-	  <ProjectReference Include="..\..\TradingApp.Business\TradingApp.Business.csproj" />
+	<ProjectReference Include="..\..\TradingApp.Business\TradingApp.Business.csproj" />
     <ProjectReference Include="..\..\TradingApp.Domain\TradingApp.Domain.csproj" />
-    <ProjectReference Include="..\..\TradingApp.Events\TradingApp.Events.csproj" />
+    <PackageReference Include="TradingApp.Events" Version="1.0.0" />
   </ItemGroup>
 
 </Project>
